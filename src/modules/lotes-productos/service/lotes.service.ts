@@ -51,9 +51,8 @@ export class LotesService {
    */
   static async actualizar(idLote: number, dto: DTO_ActualizarLote) {
     const payload = {
-      descripcion: dto.descripcion ?? "",
-      serie_factura_compra: dto.serie_factura_compra ?? "",
-      numero_factura_compra: dto.numero_factura_compra ?? "",
+      comprobante_compra: dto.comprobante_compra ?? null,
+      costo_por_unidad: dto.costo_por_unidad ?? null,
       fecha_hora_ingreso: dto.fecha_hora_ingreso
         ? dayjs(dto.fecha_hora_ingreso).format("YYYY-MM-DD HH:mm:ss")
         : null,

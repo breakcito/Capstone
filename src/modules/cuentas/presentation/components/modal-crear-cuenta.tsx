@@ -1,0 +1,177 @@
+import { useState, useEffect } from "react";
+import {
+  Stack,
+  TextInput,
+  PasswordInput,
+  Select,
+  Button,
+  Group,
+  Text,
+  Paper,
+  Badge,
+} from "@mantine/core";
+import {
+  UserIcon,
+  KeyIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
+import { ModalEstandar } from "../../../../presentation/utils/modal-estandar";
+import type { RES_EmpleadoUsuario } from "../../service/cuentas.responses";
+import type { RES_Rol } from "../../../../service/responses/rol";
+
+interface ModalCrearCuentaProps {
+  empleado: RES_EmpleadoUsuario | null;
+  opened: boolean;
+  onClose: () => void;
+  onGuardar: (payload: {
+    id_rol: number;
+    username: string;
+    password: string;
+  }) => void;
+  loading: boolean;
+  roles: RES_Rol[];
+}
+
+export const ModalCrearCuenta = ({
+  empleado,
+  opened,
+  onClose,
+  onGuardar,
+  loading,
+  roles,
+}: ModalCrearCuentaProps) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [idRol, setIdRol] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (empleado) {
+      // Sugerir username por defecto a partir del nombre y apellido
+      const primerNombre = empleado.nombre.split(" ")[0].toLowerCase().trim();
+      const primerApellido = empleado.apellido.split(" ")[0].toLowerCase().trim();
+      setUsername(`${primerNombre}.${primerApellido}`);
+      setPassword("");
+      // Seleccionar primer rol por defecto si existe
+      if (roles.length > 0) {
+        setIdRol(roles[0].id_rol);
+      }
+    }
+  }, [empleado, roles]);
+
+  if (!empleado) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!idRol) return;
+    onGuardar({
+      id_rol: idRol,
+      username,
+      password,
+    });
+  };
+
+  const fieldClasses = {
+    input:
+      "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 transition-all",
+    label: "text-zinc-300 mb-1 font-medium text-xs",
+  };
+
+  return (
+    <ModalEstandar
+      opened={opened}
+      close={onClose}
+      title="Registrar Cuenta de Acceso"
+      size="md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card resumen del empleado */}
+        <Paper className="p-3.5 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl">
+          <Group justify="space-between" align="center">
+            <div>
+              <Text size="xs" c="dimmed" fw={600} className="uppercase tracking-wider">
+                Empleado
+              </Text>
+              <Text size="sm" fw={700} c="white">
+                {empleado.apellido}, {empleado.nombre}
+              </Text>
+            </div>
+            {empleado.dni && (
+              <Badge variant="light" color="indigo" radius="md" size="sm">
+                DNI: {empleado.dni}
+              </Badge>
+            )}
+          </Group>
+        </Paper>
+
+        <Stack gap="sm">
+          <Select
+            label="Rol en el Sistema"
+            placeholder="Seleccione el rol"
+            data={roles.map((r) => ({
+              value: r.id_rol.toString(),
+              label: r.nombre,
+            }))}
+            value={idRol ? idRol.toString() : null}
+            onChange={(val) => setIdRol(val ? Number(val) : null)}
+            required
+            radius="lg"
+            leftSection={<ShieldCheckIcon className="w-4 h-4 text-zinc-500" />}
+            classNames={fieldClasses}
+            disabled={loading}
+          />
+
+          <TextInput
+            label="Nombre de Usuario"
+            placeholder="Ej: juan.perez"
+            value={username}
+            onChange={(e) => setUsername(e.currentTarget.value)}
+            required
+            radius="lg"
+            leftSection={<UserIcon className="w-4 h-4 text-zinc-500" />}
+            classNames={fieldClasses}
+            disabled={loading}
+          />
+
+          <PasswordInput
+            label="Contraseña"
+            placeholder="Mínimo 6 caracteres"
+            value={password}
+            onChange={(e) => setPassword(e.currentTarget.value)}
+            required
+            radius="lg"
+            leftSection={<KeyIcon className="w-4 h-4 text-zinc-500" />}
+            classNames={{
+              ...fieldClasses,
+              innerInput: "text-white placeholder:text-zinc-500",
+              visibilityToggle: "text-zinc-500 hover:text-zinc-300",
+            }}
+            disabled={loading}
+          />
+        </Stack>
+
+        <Group justify="flex-end" gap="sm" mt="lg">
+          <Button
+            type="button"
+            variant="subtle"
+            onClick={onClose}
+            disabled={loading}
+            radius="lg"
+            size="sm"
+            className="text-zinc-400 hover:text-white"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            loading={loading}
+            radius="lg"
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-900/20 px-6 font-semibold"
+          >
+            Registrar Cuenta
+          </Button>
+        </Group>
+      </form>
+    </ModalEstandar>
+  );
+};

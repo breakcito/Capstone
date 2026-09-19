@@ -6,7 +6,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Textarea,
 } from "@mantine/core";
 import {
   ArchiveBoxIcon,
@@ -31,12 +30,10 @@ export const EditarLoteModal = ({
   onCancel,
 }: EditarLoteModalProps) => {
   const {
-    descripcion,
-    setDescripcion,
-    serieFacturaCompra,
-    setSerieFacturaCompra,
-    numeroFacturaCompra,
-    setNumeroFacturaCompra,
+    comprobanteCompra,
+    setComprobanteCompra,
+    costoPorUnidad,
+    setCostoPorUnidad,
     fechaHoraIngreso,
     setFechaHoraIngreso,
     submitting,
@@ -99,28 +96,28 @@ export const EditarLoteModal = ({
         onChange={(date) => setFechaHoraIngreso(date as Date | null)}
       />
 
-      {/* Datos de factura */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextInput
-          label="Serie Factura"
-          placeholder="Ej. F001"
-          maxLength={64}
-          value={serieFacturaCompra}
+          label="Comprobante de Compra (Opcional)"
+          placeholder="Ej. F001-000123"
+          maxLength={128}
+          value={comprobanteCompra}
           onChange={(e) =>
-            setSerieFacturaCompra(e.currentTarget.value.toUpperCase())
+            setComprobanteCompra(e.currentTarget.value.toUpperCase())
           }
           classNames={inputClasses}
           radius="lg"
           size="sm"
         />
+
         <TextInput
-          label="Número Factura"
-          placeholder="Ej. 000123"
-          maxLength={64}
-          value={numeroFacturaCompra}
-          onChange={(e) =>
-            setNumeroFacturaCompra(e.currentTarget.value.toUpperCase())
-          }
+          label={`Costo x Unidad (S/.)`}
+          placeholder="Ej: 15.50"
+          value={costoPorUnidad !== null && costoPorUnidad !== undefined ? String(costoPorUnidad) : ""}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setCostoPorUnidad(v === "" ? null : Number(v));
+          }}
           classNames={inputClasses}
           radius="lg"
           size="sm"
@@ -155,19 +152,6 @@ export const EditarLoteModal = ({
           </Text>
         </div>
       ) : null}
-
-      {/* Descripción */}
-      <Textarea
-        label="Descripción o referencia"
-        placeholder="Notas adicionales, guía de remisión, etc."
-        minRows={3}
-        maxLength={1000}
-        value={descripcion}
-        onChange={(e) => setDescripcion(e.currentTarget.value)}
-        classNames={inputClasses}
-        radius="lg"
-        size="sm"
-      />
 
       {/* Error */}
       {error && (

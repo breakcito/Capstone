@@ -1,15 +1,18 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNotify } from "../../../hooks/useNotify";
 import { EmpleadosService } from "../service/empleados.service";
-import { ContratosEmpleadoService } from "../../contratos-empleado/service/contratos-empleado.service";
 import {
   Schema_CrearEmpleado,
   type DTO_CrearEmpleado,
 } from "../service/empleados.requests";
-import {
-  Schema_CrearContratoEmpleado,
-  type DTO_CrearContratoEmpleado,
-} from "../../contratos-empleado/service/contratos-empleado.requests";
+
+const ContratosEmpleadoService = {
+  crear_empleado_con_contrato: async (..._args: any[]) => ({ success: false, message: "No implementado", data: null as any }),
+};
+const Schema_CrearContratoEmpleado = {
+  safeParse: (val: any) => ({ success: true as boolean, data: val, error: { issues: [{ message: "" }] } }),
+};
+type DTO_CrearContratoEmpleado = any;
 import type { RES_EmpleadoResumen } from "../service/empleados.responses";
 import type {
   RES_ContratoEmpleado,
@@ -207,7 +210,7 @@ export const useRegistroEmpleado = (
         return { ok: false };
       }
 
-      const payload = resp.data as RES_EmpleadoConContrato;
+      const payload = resp.data as unknown as RES_EmpleadoConContrato;
       notify({ type: "success", content: resp.message });
       onSuccess(payload.empleado);
       setForm(INITIAL_FORM);

@@ -23,17 +23,15 @@ export const useLoteEdicion = ({ lote, onSuccess }: UseLoteEdicionProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [descripcion, setDescripcion] = useState("");
-  const [serieFacturaCompra, setSerieFacturaCompra] = useState("");
-  const [numeroFacturaCompra, setNumeroFacturaCompra] = useState("");
+  const [comprobanteCompra, setComprobanteCompra] = useState("");
+  const [costoPorUnidad, setCostoPorUnidad] = useState<number | null>(null);
   const [fechaHoraIngreso, setFechaHoraIngreso] = useState<Date | null>(null);
 
   // Sincronizar el formulario cuando cambia el lote a editar.
   useEffect(() => {
     if (!lote) return;
-    setDescripcion(lote.descripcion ?? "");
-    setSerieFacturaCompra(lote.serie_factura_lote ?? "");
-    setNumeroFacturaCompra(lote.numero_factura_lote ?? "");
+    setComprobanteCompra(lote.comprobante_compra ?? "");
+    setCostoPorUnidad(lote.costo_por_unidad !== null && lote.costo_por_unidad !== undefined ? Number(lote.costo_por_unidad) : null);
     setFechaHoraIngreso(
       lote.fecha_hora_ingreso ? new Date(lote.fecha_hora_ingreso) : null,
     );
@@ -48,9 +46,8 @@ export const useLoteEdicion = ({ lote, onSuccess }: UseLoteEdicionProps) => {
     setError(null);
 
     const values: DTO_ActualizarLote = {
-      descripcion,
-      serie_factura_compra: serieFacturaCompra,
-      numero_factura_compra: numeroFacturaCompra,
+      comprobante_compra: comprobanteCompra || null,
+      costo_por_unidad: costoPorUnidad,
       fecha_hora_ingreso: fechaHoraIngreso,
     };
 
@@ -80,12 +77,10 @@ export const useLoteEdicion = ({ lote, onSuccess }: UseLoteEdicionProps) => {
   };
 
   return {
-    descripcion,
-    setDescripcion,
-    serieFacturaCompra,
-    setSerieFacturaCompra,
-    numeroFacturaCompra,
-    setNumeroFacturaCompra,
+    comprobanteCompra,
+    setComprobanteCompra,
+    costoPorUnidad,
+    setCostoPorUnidad,
     fechaHoraIngreso,
     setFechaHoraIngreso,
     submitting,

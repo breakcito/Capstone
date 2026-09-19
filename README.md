@@ -24,7 +24,6 @@ API del ERP Cupper & Hannia para la industria minera. Digitaliza y conecta opera
 - Tailwind CSS v4
 - Animaciones: Motion, GSAP, Anime.js
 - PDF/Excel: `@react-pdf/renderer`, `exceljs`
-- WebSockets: Laravel Echo + Pusher
 
 ## Estructura
 
@@ -41,7 +40,7 @@ src/
 │   ├── pages/             # home, placeholder
 │   ├── root/              # App, main, ProtectedRoute, PublicRoute
 │   └── utils/             # DataTableEstandar, ModalEstandar, JsonScanner, forms rápidos, PDF, Excel, Printer
-├── service/               # _api (interceptor), _socket (WS), auxiliar (catálogos), archivo, menu-nav
+├── service/               # _api (interceptor), auxiliar (catálogos), archivo, menu-nav
 ├── shared/
 │   ├── enums/             # mapeo 1:1 de PHP Backed Enums
 │   ├── functions/         # cn (tw-merge), formatNumber, get-coincidencias, en-plural, mm-to-pt
@@ -80,7 +79,6 @@ src/
 ## Servicios (`src/service`)
 
 - **`_api.ts`** — Axios con interceptor JWT. Inyecta `Bearer` automático, loguea request/response. En 401 limpia `auth`, `menu`, `perfil` y notifica "Sesión expirada".
-- **`_socket.ts`** — Laravel Echo + Pusher para eventos en tiempo real (ej. cambio global del Modo Auditoría).
 - **`auxiliar.service.ts`** — hub de catálogos compartidos (`get_productos`, `get_almacenes`, `get_marcas`, `get_empleados`, etc.).
 - **`archivo.service.ts`** — gestión de adjuntos.
 - **`menu-nav.service.ts`** — árbol de menús por rol.

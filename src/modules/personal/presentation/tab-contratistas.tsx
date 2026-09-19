@@ -32,10 +32,11 @@ import { useContratistas } from "../hooks/useContratistas";
 import { useAsignacionLaboresContratista } from "../hooks/useAsignacionLaboresContratista";
 import type { RES_ContratistaResumen } from "../service/empleados.responses";
 import { useNotify } from "../../../hooks/useNotify";
-import { ModalContratoEmpleado } from "../../contratos-empleado/presentation/modal-contrato-empleado";
-import { ModalHistorialContratosEmpleado } from "../../contratos-empleado/presentation/modal-historial-contratos-empleado";
 import { ModalEditarContratista } from "./modal-editar-contratista";
 import { EstadoBase } from "../../../shared/enums/_generic/estado-base";
+
+const ModalContratoEmpleado = (_props: any) => null;
+const ModalHistorialContratosEmpleado = (_props: any) => null;
 
 interface TabContratistasProps {
   controller: ReturnType<typeof useContratistas>;

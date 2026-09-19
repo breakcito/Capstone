@@ -28,7 +28,6 @@ import { DataTableEstandar } from "../../../presentation/utils/datatable-estanda
 import { Kardex_TipoMovimiento } from "../../../shared/enums/kardex";
 import { MESES } from "../../../shared/variables/meses";
 import { formatNumber } from "../../../shared/functions/formatNumber";
-import { Moneda } from "../../../shared/enums/_generic/moneda";
 import { BotonRecargar } from "../../../presentation/utils/boton-recargar";
 
 export const KardexProductosPage = () => {
@@ -214,139 +213,76 @@ export const KardexProductosPage = () => {
       },
       {
         accessor: "costo",
-        title: "Costo Promedio",
+        title: "Costo",
         width: 200,
         textAlign: "center",
-        render: (r) => (
-          <div className="flex flex-row items-center justify-center gap-3">
-            {/* Precio Unitario Base */}
-            {r.id_activo_fijo == null && (
+        render: (r) => {
+          const costoUnitarioLote = r.costo_por_unidad;
+          const costoUnitarioBase = r.costo_por_unidad_base;
+          const subtotal = r.subtotal != null ? Number(r.subtotal) : (costoUnitarioLote != null ? Number(costoUnitarioLote) * Number(r.cantidad_movimiento) : null);
+
+          return (
+            <div className="flex flex-row items-center justify-center gap-3">
+              {/* Costo Unitario Base */}
               <div className="flex flex-col items-center leading-tight">
                 <Text
                   size="9px"
                   fw={700}
                   className="text-zinc-400 uppercase tracking-tighter"
                 >
-                  Por {r.unidad_medida_base}
-                </Text>
-                <Text size="xs" fw={600} className="text-zinc-300 italic">
-                  {r.moneda == Moneda.Soles ? "S/." : "$"}{" "}
-                  {formatNumber(r.costo_promedio_base)}
-                </Text>
-              </div>
-            )}
-
-            {/* Precio Presentación */}
-            {r.id_unidad_medida_lote !== r.id_unidad_medida_base &&
-              r.id_activo_fijo == null && (
-                <>
-                  <div className="w-px h-6 bg-zinc-800/60" />
-                  <div className="flex flex-col items-center leading-tight">
-                    <Text
-                      size="9px"
-                      fw={700}
-                      className="text-zinc-400 uppercase tracking-tighter"
-                    >
-                      Por {r.unidad_medida_lote}
-                    </Text>
-                    <Text size="xs" fw={600} className="text-zinc-300 italic">
-                      {r.moneda == Moneda.Soles ? "S/." : "$"}{" "}
-                      {formatNumber(r.costo_promedio_por_presentacion)}
-                    </Text>
-                  </div>
-                </>
-              )}
-
-            {r.id_activo_fijo == null && (
-              <div className="w-px h-6 bg-indigo-500/20" />
-            )}
-            {/* Total Movimiento */}
-            <div className="flex flex-col items-center leading-tight">
-              <Text
-                size="9.5px"
-                fw={700}
-                c="yellow.2"
-                className="uppercase tracking-tighter"
-              >
-                Subtotal
-              </Text>
-              <Text size="sm" fw={800} c="teal.5">
-                {r.moneda == Moneda.Soles ? "S/." : "$"}{" "}
-                {formatNumber(r.subtotal_promedio)}
-              </Text>
-            </div>
-          </div>
-        ),
-      },
-      {
-        accessor: "costo_real",
-        title: "Costo Real",
-        width: 200,
-        textAlign: "center",
-        render: (r) => (
-          <div className="flex flex-row items-center justify-center gap-3">
-            {/* costo Unitario Base */}
-            {r.id_activo_fijo == null && (
-              <div className="flex flex-col items-center leading-tight">
-                <Text
-                  size="9px"
-                  fw={700}
-                  className="text-zinc-400 uppercase tracking-tighter"
-                >
-                  Por {r.unidad_medida_base}
+                  Por {r.unidad_medida_base_abv || r.unidad_medida_base}
                 </Text>
                 <Text size="xs" fw={600} className="text-zinc-300 italic">
                   S/.
-                  {r.costo_por_unidad_base != null
-                    ? formatNumber(r.costo_por_unidad_base)
+                  {costoUnitarioBase != null
+                    ? formatNumber(costoUnitarioBase)
                     : "---"}
                 </Text>
               </div>
-            )}
 
-            {/* Precio Presentación */}
-            {r.id_unidad_medida_lote !== r.id_unidad_medida_base &&
-              r.id_activo_fijo == null && (
-                <>
-                  <div className="w-px h-6 bg-zinc-800/60" />
-                  <div className="flex flex-col items-center leading-tight">
-                    <Text
-                      size="9px"
-                      fw={700}
-                      className="text-zinc-400 uppercase tracking-tighter"
-                    >
-                      Por {r.unidad_medida_lote}
-                    </Text>
-                    <Text size="xs" fw={600} className="text-zinc-300 italic">
-                      S/.
-                      {r.costo_por_unidad != null
-                        ? formatNumber(r.costo_por_unidad)
-                        : "---"}
-                    </Text>
-                  </div>
-                </>
-              )}
+              {/* Costo Presentación si difiere */}
+              {r.id_unidad_medida_lote !== r.id_unidad_medida_base &&
+                r.id_unidad_medida_lote !== null && (
+                  <>
+                    <div className="w-px h-6 bg-zinc-800/60" />
+                    <div className="flex flex-col items-center leading-tight">
+                      <Text
+                        size="9px"
+                        fw={700}
+                        className="text-zinc-400 uppercase tracking-tighter"
+                      >
+                        Por {r.unidad_medida_lote_abv || r.unidad_medida_lote}
+                      </Text>
+                      <Text size="xs" fw={600} className="text-zinc-300 italic">
+                        S/.
+                        {costoUnitarioLote != null
+                          ? formatNumber(costoUnitarioLote)
+                          : "---"}
+                      </Text>
+                    </div>
+                  </>
+                )}
 
-            {r.id_activo_fijo == null && (
               <div className="w-px h-6 bg-indigo-500/20" />
-            )}
-            {/* Total Movimiento */}
-            <div className="flex flex-col items-center leading-tight">
-              <Text
-                size="9.5px"
-                fw={700}
-                c="yellow.2"
-                className="uppercase tracking-tighter"
-              >
-                Subtotal
-              </Text>
-              <Text size="sm" fw={800} c="teal.5">
-                S/.
-                {r.subtotal != null ? formatNumber(r.subtotal) : "---"}
-              </Text>
+
+              {/* Total Movimiento */}
+              <div className="flex flex-col items-center leading-tight">
+                <Text
+                  size="9.5px"
+                  fw={700}
+                  c="yellow.2"
+                  className="uppercase tracking-tighter"
+                >
+                  Subtotal
+                </Text>
+                <Text size="sm" fw={800} c="teal.5">
+                  S/.
+                  {subtotal != null ? formatNumber(subtotal) : "---"}
+                </Text>
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
       },
       {
         accessor: "descripcion",

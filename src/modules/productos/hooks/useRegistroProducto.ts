@@ -8,30 +8,21 @@ import {
   type DTO_ActualizarProducto,
 } from "../service/productos.requests";
 import type { RES_ProductoResumen } from "../service/productos.responses";
+import { TipoProducto } from "../../../shared/enums/_generic/tipo-producto";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
-import { Moneda } from "../../../shared/enums/_generic/moneda";
 import type { RES_UnidadMedida } from "../../../service/responses/unidad-medida";
 import {
   getCoincidencias,
   type SearchResult,
 } from "../../../shared/functions/get-coincidencias";
 import { AuxService } from "../../../service/auxiliar.service";
-export interface RES_Categoria {
-  id_categoria: number;
-  nombre: string;
-}
 
 const INITIAL_FORM: DTO_CrearProducto = {
-  id_categoria: 0,
   id_unidad_medida_base: 0,
   nombre: "",
-  prefijo: null,
-  es_auditable: false,
+  tipo_producto: TipoProducto.Otros,
   es_perecible: false,
-  para_mantenimiento: false,
   stock_minimo_base: 0,
-  moneda: Moneda.Soles,
-  costo_promedio_base: 0,
   tiempo_espera_vencimiento: null,
   periodo_espera_vencimiento: null,
 };
@@ -39,16 +30,11 @@ const INITIAL_FORM: DTO_CrearProducto = {
 const productoToForm = (
   producto: RES_ProductoResumen,
 ): DTO_ActualizarProducto => ({
-  id_categoria: producto.id_categoria,
   id_unidad_medida_base: producto.id_unidad_medida_base,
   nombre: producto.nombre,
-  prefijo: producto.prefijo,
-  es_auditable: !!producto.es_auditable,
+  tipo_producto: (producto.tipo_producto as TipoProducto) || TipoProducto.Otros,
   es_perecible: !!producto.es_perecible,
-  para_mantenimiento: !!producto.para_mantenimiento,
   stock_minimo_base: Number(producto.stock_minimo_base ?? 0),
-  moneda: producto.moneda ?? Moneda.Soles,
-  costo_promedio_base: Number(producto.costo_promedio_base ?? 0),
   tiempo_espera_vencimiento: producto.tiempo_espera_vencimiento,
   periodo_espera_vencimiento: producto.periodo_espera_vencimiento,
 });
@@ -68,22 +54,15 @@ export const useRegistroProducto = ({
 }: UseRegistroProductoProps) => {
   const { notify } = useNotify();
   const [form, setForm] = useState<DTO_CrearProducto>(INITIAL_FORM);
-  const [categorias, setCategorias] = useState<RES_Categoria[]>([]);
   const [unidades, setUnidades] = useState<RES_UnidadMedida[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [loadingUnidades, setLoadingUnidades] = useState(false);
 
   // Estado para coincidencias de nombres
   const [coincidencias, setCoincidencias] = useState<
     SearchResult<RES_ProductoResumen>[]
   >([]);
-
-  const cargarCategorias = useCallback(async () => {
-    setLoadingCategorias(false);
-    setCategorias([]);
-  }, []);
 
   const cargarUnidades = useCallback(async () => {
     setLoadingUnidades(true);
@@ -98,9 +77,8 @@ export const useRegistroProducto = ({
   }, []);
 
   useEffect(() => {
-    cargarCategorias();
     cargarUnidades();
-  }, [cargarCategorias, cargarUnidades]);
+  }, [cargarUnidades]);
 
   // Hidratar el formulario cuando se recibe un producto para editar
   useEffect(() => {
@@ -196,13 +174,10 @@ export const useRegistroProducto = ({
   return {
     form,
     setField,
-    categorias,
     unidades,
     coincidencias,
     loading,
-    loadingCategorias,
     loadingUnidades,
-    cargarCategorias,
     cargarUnidades,
     handleSubmit,
     isEdit,
