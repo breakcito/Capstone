@@ -4,7 +4,6 @@ import {
   NumberInput,
   Select,
   Text,
-  Textarea,
   Paper,
   Divider,
   TextInput,
@@ -60,12 +59,8 @@ export const RegistroLote = ({
     setFechaHoraIngreso,
     fechaVencimiento,
     setFechaVencimiento,
-    descripcion,
-    setDescripcion,
-    serieFacturaCompra,
-    setSerieFacturaCompra,
-    numeroFacturaCompra,
-    setNumeroFacturaCompra,
+    comprobanteCompra,
+    setComprobanteCompra,
     costoPorUnidad,
     setCostoPorUnidad,
     loadingProductos,
@@ -321,40 +316,13 @@ export const RegistroLote = ({
           size="sm"
         />
 
-        <div className="grid grid-cols-2 gap-2">
-          <TextInput
-            label="Serie Factura"
-            placeholder="Ej. F001"
-            value={serieFacturaCompra}
-            onChange={(e) =>
-              setSerieFacturaCompra(e.currentTarget.value.toUpperCase())
-            }
-            classNames={inputClasses}
-            radius="lg"
-            size="sm"
-          />
-          <TextInput
-            label="Número Factura"
-            placeholder="Ej. 000123"
-            value={numeroFacturaCompra}
-            onChange={(e) =>
-              setNumeroFacturaCompra(e.currentTarget.value.toUpperCase())
-            }
-            classNames={inputClasses}
-            radius="lg"
-            size="sm"
-          />
-        </div>
-
-        <Divider className="md:col-span-2 border-zinc-800/40 my-2" />
-
-        <Textarea
-          label="Descripción o referencia (Opcional)"
-          placeholder="Ej: Factura F-504, Guía de Remisión, Notas adicionales..."
-          className="md:col-span-2"
-          minRows={2}
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.currentTarget.value)}
+        <TextInput
+          label="Comprobante de Compra (Opcional)"
+          placeholder="Ej: F001-000123, Boleta o Factura de compra"
+          value={comprobanteCompra}
+          onChange={(e) =>
+            setComprobanteCompra(e.currentTarget.value.toUpperCase())
+          }
           classNames={inputClasses}
           radius="lg"
           size="sm"

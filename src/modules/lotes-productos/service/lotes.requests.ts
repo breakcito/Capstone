@@ -26,8 +26,7 @@ export const Schema_CrearLote = z.object({
     })
     .nullable()
     .optional(),
-  serie_factura_compra: z.string().optional().nullable(),
-  numero_factura_compra: z.string().optional().nullable(),
+  comprobante_compra: z.string().optional().nullable(),
   costo_por_unidad: z.coerce.number().optional().nullable(),
 });
 
@@ -44,25 +43,13 @@ export const Schema_AjustarStock = z.object({
 
 export type DTO_AjustarStock = z.infer<typeof Schema_AjustarStock>;
 
-/**
- * Edicion administrativa de lote.
- * Solo se exponen los campos modificables: descripcion, serie/numero de factura
- * y fecha_hora_ingreso.
- *
- * NO incluye:
- *  - estado: lo gestiona eliminar_lote (soft-delete).
- *  - fecha_vencimiento: solo se setea al registrar el lote.
- *  - stock_actual / contenido_por_presentacion: por Correccion de Inventario
- *    para preservar el Kardex inmutable.
- */
 export const Schema_ActualizarLote = z.object({
-  descripcion: z.string().max(1000, "Máximo 1000 caracteres").optional().nullable(),
-  serie_factura_compra: z.string().max(64, "Máximo 64 caracteres").optional().nullable(),
-  numero_factura_compra: z
+  comprobante_compra: z
     .string()
-    .max(64, "Máximo 64 caracteres")
+    .max(128, "Máximo 128 caracteres")
     .optional()
     .nullable(),
+  costo_por_unidad: z.coerce.number().min(0).optional().nullable(),
   fecha_hora_ingreso: z
     .any()
     .transform((val) => {

@@ -178,18 +178,16 @@ export const useLotesColumns = ({
       },
       {
         accessor: "origen_compra",
-        title: "Origen Compra",
+        title: "Comprobante",
         textAlign: "center",
         width: 180,
         render: (record) => {
-          const tieneFactura =
-            record.serie_factura_compra && record.numero_factura_compra;
-          const tieneOC = record.id_orden_compra ? true : false;
+          const comp = record.comprobante_compra || (record.serie_factura_compra && record.numero_factura_compra ? `${record.serie_factura_compra}-${record.numero_factura_compra}` : null);
 
-          if (!tieneFactura && !tieneOC) {
+          if (!comp) {
             return (
               <Text size="xs" c="dimmed" fs="italic">
-                Carga Manual
+                Sin comprobante
               </Text>
             );
           }
@@ -199,29 +197,15 @@ export const useLotesColumns = ({
               <div className="p-1.5 bg-zinc-800/40 rounded-lg border border-zinc-700/30 flex items-center justify-center">
                 <DocumentTextIcon className="w-4 h-4 text-zinc-400" />
               </div>
-              <div className="flex flex-col items-start gap-0.5">
-                {tieneFactura ? (
-                  <Badge
-                    size="sm"
-                    variant="light"
-                    color="cyan"
-                    radius="sm"
-                    className="font-bold border border-cyan-500/10 px-1 py-0"
-                  >
-                    {record.serie_factura_compra}-{record.numero_factura_compra}
-                  </Badge>
-                ) : null}
-                {tieneOC ? null : (
-                  <Text
-                    size="9px"
-                    c="orange"
-                    fw={700}
-                    className="uppercase tracking-wider"
-                  >
-                    Sin O.C.
-                  </Text>
-                )}
-              </div>
+              <Badge
+                size="sm"
+                variant="light"
+                color="cyan"
+                radius="sm"
+                className="font-bold border border-cyan-500/10 px-2 py-0.5"
+              >
+                {comp}
+              </Badge>
             </Group>
           );
         },

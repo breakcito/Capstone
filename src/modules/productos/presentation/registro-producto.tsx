@@ -24,14 +24,13 @@ import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useRegistroProducto } from "../hooks/useRegistroProducto";
 import type { RES_ProductoResumen } from "../service/productos.responses";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
-import { Moneda } from "../../../shared/enums/_generic/moneda";
+import { TipoProducto } from "../../../shared/enums/_generic/tipo-producto";
 import { useDisclosure } from "@mantine/hooks";
 import { ModalEstandar } from "../../../presentation/utils/modal-estandar";
 import { FormUnidadMedida } from "../../../presentation/utils/form-unidad-medida";
 import { LabelForm } from "./components/label-form";
 import { useMemo } from "react";
 import { enPlural } from "../../../shared/functions/en-plural";
-import { useAuditoriaStore } from "../../../stores/auditoria.store";
 
 interface RegistroProductoProps {
   productosExistentes: RES_ProductoResumen[];
@@ -48,7 +47,6 @@ export const RegistroProducto = ({
   onCancel,
   productoEdicion,
 }: RegistroProductoProps) => {
-  const { en_modo_auditable } = useAuditoriaStore();
   const {
     form,
     setField,
@@ -66,13 +64,11 @@ export const RegistroProducto = ({
     productoEdicion,
   });
 
-  const isActivoFijo = false;
-
-  // Agrupar coincidencias por categoría para el diseño del dropdown
+  // Agrupar coincidencias
   const groupedCoincidencias = useMemo(() => {
     const groups: Record<string, typeof coincidencias> = {};
     coincidencias.forEach((res) => {
-      const cat = res.item.categoria || "Sin Categoría";
+      const cat = (res.item.tipo_producto as string) || "General";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(res);
     });
@@ -87,7 +83,6 @@ export const RegistroProducto = ({
   return (
     <LazyMotion features={domAnimation}>
       <Stack gap="lg" mt="xs">
-        {/* Fila 1: Categoría y Nombre */}
         {/* Fila 1: Nombre */}
         <div className="grid grid-cols-1 gap-4">
           <Popover
@@ -200,8 +195,27 @@ export const RegistroProducto = ({
           </Popover>
         </div>
 
-        {/* Fila 2: Unidad y Stock */}
+        {/* Fila 2: Tipo de Producto y Unidad de Medida */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select
+            label={<LabelForm text="Tipo de Producto" required />}
+            placeholder="Seleccione tipo..."
+            data={Object.values(TipoProducto).map((tp) => ({
+              value: tp,
+              label: tp,
+            }))}
+            value={form.tipo_producto}
+            onChange={(val) =>
+              setField("tipo_producto", (val as TipoProducto) || TipoProducto.Otros)
+            }
+            classNames={{
+              input:
+                "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
+            }}
+            radius="lg"
+            allowDeselect={false}
+          />
+
           <div className="flex flex-col gap-1.5">
             <LabelForm text="Unidad Medida" required />
             <div className="flex gap-2 items-center">
@@ -232,7 +246,7 @@ export const RegistroProducto = ({
                   withinPortal: true,
                   transitionProps: { transition: "pop", duration: 200 },
                 }}
-                disabled={loadingUnidades || isActivoFijo}
+                disabled={loadingUnidades}
                 className="flex-1"
               />
               <ActionIcon
@@ -242,178 +256,47 @@ export const RegistroProducto = ({
                 color="indigo"
                 className="shrink-0 bg-indigo-600 hover:bg-indigo-700 transition-colors"
                 onClick={openAddUnidad}
-                disabled={isActivoFijo}
               >
                 <PlusIcon className="w-5 h-5 text-white" />
               </ActionIcon>
             </div>
           </div>
-
-          <AnimatePresence mode="wait">
-            {isActivoFijo ? (
-              <m.div
-                key="prefijo-field"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <TextInput
-                  label={<LabelForm text="Prefijo (Activo Fijo)" />}
-                  placeholder="Ej: SCOO"
-                  maxLength={100}
-                  value={form.prefijo || ""}
-                  onChange={(e) =>
-                    setField("prefijo", e.currentTarget.value.toUpperCase())
-                  }
-                  classNames={{
-                    input:
-                      "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
-                  }}
-                  radius="lg"
-                />
-              </m.div>
-            ) : (
-              <m.div
-                key="stock-field"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <NumberInput
-                  label={<LabelForm text={`Stock Mínimo`} />}
-                  placeholder="0"
-                  value={form.stock_minimo_base}
-                  onChange={(val) => setField("stock_minimo_base", Number(val))}
-                  classNames={{
-                    input:
-                      "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
-                  }}
-                  radius="lg"
-                  min={0}
-                />
-              </m.div>
-            )}
-          </AnimatePresence>
         </div>
 
+        {/* Fila 3: Stock Mínimo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label={<LabelForm text="Moneda" required />}
-            placeholder="Seleccione"
-            data={[
-              { value: Moneda.Soles, label: "Soles (S/.)" },
-              { value: Moneda.Dolares, label: "Dólares ($)" },
-            ]}
-            value={form.moneda}
-            onChange={(val) =>
-              setField("moneda", (val ?? Moneda.Soles) as Moneda)
-            }
-            classNames={{
-              input:
-                "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
-            }}
-            radius="lg"
-            allowDeselect={false}
-            comboboxProps={{
-              withinPortal: true,
-              transitionProps: { transition: "pop", duration: 200 },
-            }}
-          />
-
           <NumberInput
-            label={
-              <LabelForm
-                text={`Costo promedio x ${
-                  unidades.find(
-                    (u) => u.id_unidad_medida === form.id_unidad_medida_base,
-                  )?.nombre || "---"
-                }`}
-              />
-            }
-            leftSection={
-              <Text size="sm" fw={600} className="text-zinc-300">
-                {form.moneda === Moneda.Soles ? "S/." : "$"}
-              </Text>
-            }
-            placeholder="0.00"
-            value={form.costo_promedio_base ?? undefined}
-            onChange={(val) => setField("costo_promedio_base", Number(val))}
+            label={<LabelForm text="Stock Mínimo" />}
+            placeholder="0"
+            value={form.stock_minimo_base}
+            onChange={(val) => setField("stock_minimo_base", Number(val))}
             classNames={{
               input:
                 "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
             }}
             radius="lg"
             min={0}
-            fixedDecimalScale
           />
         </div>
 
+        {/* Perecibilidad */}
         <div className="border border-zinc-800/80 rounded-2xl p-5 space-y-6 mt-2 bg-zinc-950/20">
-          <Text
-            size="xs"
-            fw={700}
-            className="text-zinc-300 tracking-widest uppercase"
-          >
-            Indicadores del Producto
-          </Text>
-
-          <Group grow gap="xl" mt={"12px"}>
-            {!en_modo_auditable && (
-              <Checkbox
-                label="Auditable"
-                description="Ocultar en las auditorías."
-                checked={!!form.es_auditable}
-                onChange={(e) =>
-                  setField("es_auditable", e.currentTarget.checked)
-                }
-                color="red"
-                radius="sm"
-                size="sm"
-                classNames={{
-                  label:
-                    "text-zinc-300 text-[13px] font-medium leading-none mt-0.5",
-                  description: "text-zinc-400 text-[11px] mt-0.5",
-                }}
-              />
-            )}
-
-            <Checkbox
-              label="Perecible"
-              description="Habilita campos de vencimiento"
-              checked={!!form.es_perecible}
-              onChange={(e) =>
-                setField("es_perecible", e.currentTarget.checked)
-              }
-              color="orange"
-              radius="sm"
-              size="sm"
-              classNames={{
-                label:
-                  "text-zinc-300 text-[13px] font-medium leading-none mt-0.5",
-                description: "text-zinc-400 text-[11px] mt-0.5",
-              }}
-              disabled={isActivoFijo}
-            />
-
-            <Checkbox
-              label="Mantenimiento"
-              description="Usado para mantenimiento."
-              checked={!!form.para_mantenimiento}
-              onChange={(e) =>
-                setField("para_mantenimiento", e.currentTarget.checked)
-              }
-              color="indigo"
-              radius="sm"
-              size="sm"
-              classNames={{
-                label:
-                  "text-zinc-300 text-[13px] font-medium leading-none mt-0.5",
-                description: "text-zinc-400 text-[11px] mt-0.5",
-              }}
-            />
-          </Group>
+          <Checkbox
+            label="Producto Perecible"
+            description="Activa el control y alerta de fecha de vencimiento"
+            checked={!!form.es_perecible}
+            onChange={(e) =>
+              setField("es_perecible", e.currentTarget.checked)
+            }
+            color="orange"
+            radius="sm"
+            size="sm"
+            classNames={{
+              label:
+                "text-zinc-300 text-[13px] font-medium leading-none mt-0.5",
+              description: "text-zinc-400 text-[11px] mt-0.5",
+            }}
+          />
 
           <AnimatePresence>
             {form.es_perecible && (

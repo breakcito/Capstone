@@ -41,9 +41,7 @@ export const useRegistroLote = ({
     new Date(),
   );
   const [fechaVencimiento, setFechaVencimiento] = useState<Date | null>(null);
-  const [descripcion, setDescripcion] = useState("");
-  const [serieFacturaCompra, setSerieFacturaCompra] = useState("");
-  const [numeroFacturaCompra, setNumeroFacturaCompra] = useState("");
+  const [comprobanteCompra, setComprobanteCompra] = useState("");
   const [costoPorUnidad, setCostoPorUnidad] = useState<number | null>(null);
 
   const loadProductos = async () => {
@@ -214,13 +212,11 @@ export const useRegistroLote = ({
       id_producto: idProducto,
       id_unidad_medida: idUnidadMedida,
       id_almacen: idAlmacen,
-      descripcion,
       stock_inicial: stockInicial,
       contenido_por_presentacion: contenidoPorPresentacion,
       fecha_hora_ingreso: fechaHoraIngreso || new Date(),
       fecha_vencimiento: fechaVencimiento,
-      serie_factura_compra: serieFacturaCompra || null,
-      numero_factura_compra: numeroFacturaCompra || null,
+      comprobante_compra: comprobanteCompra || null,
       costo_por_unidad: costoPorUnidad,
     };
 
@@ -267,12 +263,8 @@ export const useRegistroLote = ({
     setFechaHoraIngreso,
     fechaVencimiento,
     setFechaVencimiento,
-    descripcion,
-    setDescripcion,
-    serieFacturaCompra,
-    setSerieFacturaCompra,
-    numeroFacturaCompra,
-    setNumeroFacturaCompra,
+    comprobanteCompra,
+    setComprobanteCompra,
     costoPorUnidad,
     setCostoPorUnidad,
 

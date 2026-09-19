@@ -10,13 +10,11 @@ import { z } from "zod";
  */
 export const Schema_CrearAlmacen = z.object({
   nombre: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  descripcion: z.string().optional(),
-  es_principal: z.boolean().default(false),
-  para_carbon: z.boolean().default(false),
   direccion: z.string().optional().nullable(),
   id_departamento: z.number().int().positive().optional().nullable(),
   id_provincia: z.number().int().positive().optional().nullable(),
   id_distrito: z.number().int().positive().optional().nullable(),
+  id_empleado_responsable: z.number().int().positive().optional().nullable(),
 });
 
 export type DTO_CrearAlmacen = z.infer<typeof Schema_CrearAlmacen>;

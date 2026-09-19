@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -7,18 +7,20 @@ import {
   Select,
   Stack,
   TextInput,
-  Textarea,
 } from "@mantine/core";
 import { IconAlertCircle, IconDeviceFloppy } from "@tabler/icons-react";
+import { UserIcon } from "@heroicons/react/24/outline";
 
 import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
 import { useUbicacionCompleta } from "../../../hooks/useUbicacionCompleta";
+import { AlmacenesService } from "../service/almacenes.service";
+import type { RES_Empleado } from "../../../service/responses/empleado";
 
-interface RegistroAlmacenLogisticaProps {
+interface RegistroAlmacenProps {
   nombre: string;
   setNombre: (val: string) => void;
-  descripcion: string;
-  setDescripcion: (val: string) => void;
+  id_empleado_responsable: number | null;
+  setIdEmpleadoResponsable: (val: number | null) => void;
   // Ubicacion (opcional, en cascada)
   id_departamento: number | null;
   setIdDepartamento: (val: number | null) => void;
@@ -37,8 +39,8 @@ interface RegistroAlmacenLogisticaProps {
 export const RegistroAlmacen = ({
   nombre,
   setNombre,
-  descripcion,
-  setDescripcion,
+  id_empleado_responsable,
+  setIdEmpleadoResponsable,
   id_departamento,
   setIdDepartamento,
   id_provincia,
@@ -51,7 +53,27 @@ export const RegistroAlmacen = ({
   loading,
   onSubmit,
   onCancel,
-}: RegistroAlmacenLogisticaProps) => {
+}: RegistroAlmacenProps) => {
+  const [empleados, setEmpleados] = useState<RES_Empleado[]>([]);
+  const [loadingEmpleados, setLoadingEmpleados] = useState(false);
+
+  useEffect(() => {
+    const fetchEmpleados = async () => {
+      setLoadingEmpleados(true);
+      try {
+        const res = await AlmacenesService.get_empleados_disponibles();
+        if (res.success && res.data) {
+          setEmpleados(res.data);
+        }
+      } catch (err) {
+        console.error("Error al cargar empleados", err);
+      } finally {
+        setLoadingEmpleados(false);
+      }
+    };
+    fetchEmpleados();
+  }, []);
+
   // Cargamos TODAS las listas de geografia al montar y filtramos localmente.
   const { loading: loadingGeo, departamentos, provincias, distritos } =
     useUbicacionCompleta();
@@ -127,7 +149,7 @@ export const RegistroAlmacen = ({
       <Stack gap="md">
         <TextInput
           label="Nombre del Almacén"
-          placeholder="Ej. Almacén Central - Mina A"
+          placeholder="Ej. Almacén Central"
           required
           withAsterisk
           disabled={loading}
@@ -137,15 +159,22 @@ export const RegistroAlmacen = ({
           onChange={(e) => setNombre(e.currentTarget.value)}
         />
 
-        <Textarea
-          label="Descripción"
-          placeholder="Detalles adicionales..."
+        <Select
+          label="Responsable del Almacén"
+          placeholder={loadingEmpleados ? "Cargando empleados..." : "Seleccione un responsable..."}
+          leftSection={<UserIcon className="w-4 h-4 text-zinc-400" />}
+          data={empleados.map((emp) => ({
+            value: String(emp.id_empleado),
+            label: `${emp.nombre_completo}${emp.dni ? ` (${emp.dni})` : ""}`,
+          }))}
+          value={id_empleado_responsable ? String(id_empleado_responsable) : null}
+          onChange={(v) => setIdEmpleadoResponsable(v ? Number(v) : null)}
+          disabled={loading || loadingEmpleados}
+          searchable
+          clearable
+          nothingFoundMessage="No se encontraron empleados"
           radius="lg"
-          minRows={3}
-          disabled={loading}
           classNames={inputClasses}
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.currentTarget.value)}
         />
 
         <div className="space-y-3">

@@ -2,10 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNotify } from "../../../hooks/useNotify";
 import { ProductosService } from "../service/productos.service";
 import type { RES_ProductoResumen } from "../service/productos.responses";
-import { useAuditoriaStore } from "../../../stores/auditoria.store";
-
 export const useProductos = () => {
-  const { en_modo_auditable } = useAuditoriaStore();
   const { notify } = useNotify();
   const [productos, setProductos] = useState<RES_ProductoResumen[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,19 +28,17 @@ export const useProductos = () => {
   const filtrados = useMemo(() => {
     const query = busqueda.toLowerCase().trim();
 
-    const result = productos.filter(
-      (p) => !(en_modo_auditable && p.es_auditable),
-    );
+    const result = productos;
 
     if (!query) return result;
 
     return result.filter(
       (p) =>
         p.nombre.toLowerCase().includes(query) ||
-        p.categoria.toLowerCase().includes(query) ||
+        (p.tipo_producto && p.tipo_producto.toLowerCase().includes(query)) ||
         p.unidad_medida_base_abreviatura.toLowerCase().includes(query),
     );
-  }, [productos, busqueda, en_modo_auditable]);
+  }, [productos, busqueda]);
 
   const pushNuevoProducto = (nuevo: RES_ProductoResumen) => {
     setProductos((prev) => [nuevo, ...prev]);

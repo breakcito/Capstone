@@ -11,3 +11,10 @@ export interface REQ_ActualizarCuenta {
   password?: string;
   estado?: string;
 }
+
+export interface REQ_CrearEmpleado {
+  nombre: string;
+  apellido: string;
+  dni?: string | null;
+  es_contratista?: boolean;
+}

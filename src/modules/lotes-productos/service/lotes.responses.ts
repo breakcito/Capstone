@@ -30,8 +30,10 @@ export interface RES_Lote {
   estado_vencimiento: EstadoVencimientoProducto;
   // Costo y Origen de Compra
   costo_por_unidad: number | null;
-  serie_factura_compra: string | null;
-  numero_factura_compra: string | null;
+  costo_por_unidad_base: number | null;
+  comprobante_compra: string | null;
+  serie_factura_compra?: string | null;
+  numero_factura_compra?: string | null;
   // Snapshot original del lote (sin coalesce con OC); la union con la OC
   // se aplica en serie_factura_compra/numero_factura_compra para vistas.
   serie_factura_lote: string | null;

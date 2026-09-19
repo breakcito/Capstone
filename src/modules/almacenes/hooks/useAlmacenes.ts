@@ -6,17 +6,7 @@ import type { RES_AlmacenResumen } from "../service/almacenes.responses";
 import { AlmacenesService } from "../service/almacenes.service";
 import { Schema_CrearAlmacen } from "../service/almacenes.requests";
 
-/**
- * Hook del modulo Almacenes.
- *
- * Se parametriza por `paraCarbon`:
- * - paraCarbon=false (logistica): lista almacenes de logistica, expone los
- *   modales de Responsables / Vecinos / Minas a abastecer.
- * - paraCarbon=true (carbon): lista almacenes de carbon. Esos almacenes
- *   NO requieren responsables, ni almacenes vecinos, ni minas a abastecer,
- *   asi que esos modales quedan ocultos en la vista.
- */
-export const useAlmacenes = (paraCarbon: boolean = false) => {
+export const useAlmacenes = () => {
   const { notify } = useNotify();
 
   // Estados de la lista
@@ -31,18 +21,13 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
     openedResponsables,
     { open: openResponsables, close: closeResponsables },
   ] = useDisclosure(false);
-  const [openedAlcance, { open: openAlcance, close: closeAlcance }] =
-    useDisclosure(false);
-  const [openedVecinos, { open: openVecinos, close: closeVecinos }] =
-    useDisclosure(false);
   const [selectedAlmacen, setSelectedAlmacen] = useState<RES_AlmacenResumen | null>(
     null,
   );
 
   // Formulario de Registro
   const [formNombre, setFormNombre] = useState("");
-  const [formDescripcion, setFormDescripcion] = useState("");
-  const [formEsPrincipal, setFormEsPrincipal] = useState(false);
+  const [formIdEmpleadoResponsable, setFormIdEmpleadoResponsable] = useState<number | null>(null);
   const [formDireccion, setFormDireccion] = useState("");
   const [formIdDepartamento, setFormIdDepartamento] = useState<number | null>(
     null,
@@ -54,8 +39,7 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
 
   const resetForm = useCallback(() => {
     setFormNombre("");
-    setFormDescripcion("");
-    setFormEsPrincipal(false);
+    setFormIdEmpleadoResponsable(null);
     setFormDireccion("");
     setFormIdDepartamento(null);
     setFormIdProvincia(null);
@@ -71,7 +55,7 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
   const listar = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await AlmacenesService.get_almacenes({ para_carbon: paraCarbon });
+      const result = await AlmacenesService.get_almacenes();
       if (result.success) {
         setAlmacenes(result.data);
       } else {
@@ -83,7 +67,7 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
     } finally {
       setLoading(false);
     }
-  }, [notify, paraCarbon]);
+  }, [notify]);
 
   useEffect(() => {
     listar();
@@ -93,9 +77,7 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
     setFormError("");
     const data = {
       nombre: formNombre,
-      descripcion: formDescripcion,
-      es_principal: formEsPrincipal,
-      para_carbon: paraCarbon,
+      id_empleado_responsable: formIdEmpleadoResponsable,
       direccion: formDireccion,
       id_departamento: formIdDepartamento,
       id_provincia: formIdProvincia,
@@ -155,22 +137,14 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
     openedResponsables,
     openResponsables,
     closeResponsables,
-    openedAlcance,
-    openAlcance,
-    closeAlcance,
-    openedVecinos,
-    openVecinos,
-    closeVecinos,
     selectedAlmacen,
     setSelectedAlmacen,
 
     // Registro
     formNombre,
     setFormNombre,
-    formDescripcion,
-    setFormDescripcion,
-    formEsPrincipal,
-    setFormEsPrincipal,
+    formIdEmpleadoResponsable,
+    setFormIdEmpleadoResponsable,
     formDireccion,
     setFormDireccion,
     formIdDepartamento,
@@ -183,8 +157,5 @@ export const useAlmacenes = (paraCarbon: boolean = false) => {
     isRegistering,
     handleCrearAlmacen,
     resetForm,
-
-    // Modo
-    paraCarbon,
   };
 };

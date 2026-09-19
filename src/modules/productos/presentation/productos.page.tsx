@@ -15,7 +15,6 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
   CubeIcon,
-  ClockIcon,
   EllipsisVerticalIcon,
   EyeIcon,
   PencilSquareIcon,
@@ -28,16 +27,9 @@ import { DataTableEstandar } from "../../../presentation/utils/datatable-estanda
 import { ModalEstandar } from "../../../presentation/utils/modal-estandar";
 import { useProductos } from "../hooks/useProductos";
 import { RegistroProducto } from "./registro-producto";
-import { HistorialCostos } from "./components/historial-costos";
 import { parseCambiosLog } from "../../../presentation/utils/parse-cambios-log";
-import type {
-  RES_LogCostoPromedio,
-  RES_ProductoResumen,
-} from "../service/productos.responses";
+import type { RES_ProductoResumen } from "../service/productos.responses";
 import { formatNumber } from "../../../shared/functions/formatNumber";
-import { Moneda } from "../../../shared/enums/_generic/moneda";
-import { enPlural } from "../../../shared/functions/en-plural";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import { BotonRecargar } from "../../../presentation/utils/boton-recargar";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
@@ -84,11 +76,6 @@ export const ProductosPage = () => {
   const [productoEnEdicion, setProductoEnEdicion] =
     useState<RES_ProductoResumen | null>(null);
 
-  const [openedHistory, { open: openHistory, close: closeHistory }] =
-    useDisclosure(false);
-  const [selectedLog, setSelectedLog] = useState<RES_LogCostoPromedio[]>([]);
-  const [selectedProdName, setSelectedProdName] = useState("");
-
   const [openedCambios, { open: openCambios, close: closeCambios }] =
     useDisclosure(false);
 
@@ -117,21 +104,6 @@ export const ProductosPage = () => {
     lista.sort((a, b) => dayjs(b.fecha).valueOf() - dayjs(a.fecha).valueOf());
     return lista;
   }, [productos]);
-
-  const handleOpenHistory = (r: RES_ProductoResumen) => {
-    try {
-      const logs =
-        typeof r.costo_promedio_base_log === "string"
-          ? JSON.parse(r.costo_promedio_base_log)
-          : r.costo_promedio_base_log;
-
-      setSelectedLog(logs || []);
-      setSelectedProdName(r.nombre);
-      openHistory();
-    } catch (e) {
-      console.error("Error al parsear logs", e);
-    }
-  };
 
   const handleOpenEdit = (r: RES_ProductoResumen) => {
     setProductoEnEdicion(r);
@@ -162,28 +134,45 @@ export const ProductosPage = () => {
           <ThemeIcon variant="light" color="indigo" radius="md" size="lg">
             <CubeIcon className="w-5 h-5" />
           </ThemeIcon>
-          <Stack gap={2}>
-            <Group gap="xs">
-              <Text size="sm" fw={500} className="text-zinc-200">
-                {r.nombre}
-              </Text>
-              {r.prefijo && (
-                <Badge color="pink" variant="light" size="xs" radius="sm">
-                  {r.prefijo}
-                </Badge>
-              )}
-            </Group>
-          </Stack>
+          <Text size="sm" fw={500} className="text-zinc-200">
+            {r.nombre}
+          </Text>
         </Group>
       ),
     },
     {
-      accessor: "categoria",
-      title: "Categoría",
+      accessor: "tipo_producto",
+      title: "Tipo de Producto",
       render: (r) => (
-        <Text size="sm" className="text-zinc-300">
-          {r.categoria}
-        </Text>
+        <Badge color="violet" variant="light" size="sm" radius="sm">
+          {r.tipo_producto || "Otros"}
+        </Badge>
+      ),
+    },
+    {
+      accessor: "unidad_medida_base",
+      title: "Unidad de Medida",
+      render: (r) => (
+        <Badge
+          size="sm"
+          variant="outline"
+          color="cyan"
+          className="font-medium"
+        >
+          {r.unidad_medida_base} ({r.unidad_medida_base_abreviatura})
+        </Badge>
+      ),
+    },
+    {
+      accessor: "stock_minimo_base",
+      title: "Stock Mín.",
+      textAlign: "center",
+      render: (r) => (
+        <div className="flex flex-row gap-2 justify-center items-center">
+          <Text size="sm" fw={500} className="text-zinc-300">
+            {formatNumber(r.stock_minimo_base)}
+          </Text>
+        </div>
       ),
     },
     {
@@ -212,96 +201,6 @@ export const ProductosPage = () => {
           </Text>
         );
       },
-    },
-    {
-      accessor: "stock_minimo_base",
-      title: "Stock Mín.",
-      textAlign: "center",
-      render: (r) => {
-        if (r.clasificacion_bien === TipoBien.ActivoFijo) {
-          return (
-            <Text size="sm" className="text-zinc-500 italic">
-              No aplica
-            </Text>
-          );
-        }
-        return (
-          <div className="flex flex-row gap-2 justify-center items-center">
-            <Text size="sm" fw={500} className="text-zinc-300">
-              {formatNumber(r.stock_minimo_base)}
-            </Text>
-            <Badge
-              size="sm"
-              variant="gradient"
-              gradient={{ from: "violet", to: "cyan", deg: 135 }}
-              className="text-white font-semibold"
-            >
-              {enPlural(r.unidad_medida_base, r.stock_minimo_base)}
-            </Badge>
-          </div>
-        );
-      },
-    },
-    {
-      accessor: "costo_promedio_base",
-      title: "Costo Promedio",
-      textAlign: "center",
-      render: (r) => (
-        <Group gap="xs" justify="center">
-          <Text size="sm" fw={600} className="text-zinc-200">
-            {r.moneda === Moneda.Soles ? "S/. " : "$ "}
-            {formatNumber(r.costo_promedio_base)}
-          </Text>
-          <Tooltip label="Ver historial de costos" position="top" withArrow>
-            <ActionIcon
-              variant="transparent"
-              color="violet"
-              radius="xl"
-              size="sm"
-              onClick={() => handleOpenHistory(r)}
-              disabled={
-                !r.costo_promedio_base_log ||
-                (typeof r.costo_promedio_base_log === "string" &&
-                  r.costo_promedio_base_log === "[]")
-              }
-              className="hover:bg-violet-500/10 transition-colors"
-            >
-              <ClockIcon className="w-4 h-4 text-violet-400 hover:text-violet-300" />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      ),
-    },
-    {
-      accessor: "indicadores",
-      title: "Indicadores",
-      textAlign: "center",
-      render: (r) => (
-        <div className="flex flex-row gap-2 justify-center items-center">
-          {r.es_auditable == true && (
-            <Badge color="yellow" variant="light" size="xs">
-              Auditable
-            </Badge>
-          )}
-          {r.es_perecible == true && (
-            <Badge color="red" variant="light" size="xs">
-              Perecible
-            </Badge>
-          )}
-          {r.para_mantenimiento == true && (
-            <Badge color="blue" variant="light" size="xs">
-              Para Mantenimiento
-            </Badge>
-          )}
-          {r.es_auditable == false &&
-            r.es_perecible == false &&
-            r.para_mantenimiento == false && (
-              <Text size="xs" className="text-zinc-600 italic">
-                Ninguno
-              </Text>
-            )}
-        </div>
-      ),
     },
     {
       accessor: "estado",
@@ -490,15 +389,6 @@ export const ProductosPage = () => {
           loading={loading}
         />
       </Stack>
-
-      <ModalEstandar
-        opened={openedHistory}
-        close={closeHistory}
-        title="Historial de Costos"
-        size="lg"
-      >
-        <HistorialCostos logs={selectedLog} productoNombre={selectedProdName} />
-      </ModalEstandar>
 
       <ModalEstandar
         opened={openedRegistro}

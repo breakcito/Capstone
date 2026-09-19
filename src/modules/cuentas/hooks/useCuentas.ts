@@ -1,147 +1,357 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { CuentasService } from "../service/cuentas.service";
-import { useDisclosure } from "@mantine/hooks";
-import type { RES_Cuenta } from "../service/cuentas.responses";
-import type { RES_Empleado } from "../../../service/responses/empleado";
-import { useNotify } from "../../../hooks/useNotify";
+import type { RES_EmpleadoUsuario } from "../service/cuentas.responses";
 import type { RES_Rol } from "../../../service/responses/rol";
 import { AuxService } from "../../../service/auxiliar.service";
+import { useNotify } from "../../../hooks/useNotify";
+
+export type FiltroCuenta = "todos" | "con_cuenta" | "sin_cuenta";
 
 export const useCuentas = () => {
-  const [cuentas, setCuentas] = useState<RES_Cuenta[]>([]);
+  const [empleados, setEmpleados] = useState<RES_EmpleadoUsuario[]>([]);
   const [roles, setRoles] = useState<RES_Rol[]>([]);
-  const [empleadosSinCuenta, setEmpleadosSinCuenta] = useState<RES_Empleado[]>(
-    [],
-  );
   const [loading, setLoading] = useState(false);
-
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const { notify } = useNotify();
+  const [filtroCuenta, setFiltroCuenta] = useState<FiltroCuenta>("todos");
   const [updatingPhoto, setUpdatingPhoto] = useState<number | null>(null);
 
-  // Modales
-  const [openedCreate, { open: openCreate, close: closeCreate }] =
-    useDisclosure(false);
+  // Modal Crear Cuenta
+  const [empleadoParaCuenta, setEmpleadoParaCuenta] =
+    useState<RES_EmpleadoUsuario | null>(null);
+  const [loadingCrearCuenta, setLoadingCrearCuenta] = useState(false);
 
-  const [selectedCuenta, setSelectedCuenta] = useState<RES_Cuenta | null>(null);
+  // Modal Editar Cuenta / Cambiar Contraseña
+  const [empleadoParaEditar, setEmpleadoParaEditar] =
+    useState<RES_EmpleadoUsuario | null>(null);
+  const [loadingEditarCuenta, setLoadingEditarCuenta] = useState(false);
 
-  const cargarCuentas = useCallback(async () => {
-    setLoading(true);
+  // Modal Nuevo Empleado
+  const [openedCrearEmpleado, setOpenedCrearEmpleado] = useState(false);
+  const [loadingCrearEmpleado, setLoadingCrearEmpleado] = useState(false);
+
+  const { notifySuccess, notifyError, notifyInfo } = useNotify();
+
+  // Cargar Empleados
+  const cargarEmpleados = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const resCuentas = await CuentasService.fetchCuentas();
-      if (resCuentas.success) setCuentas(resCuentas.data);
+      const res = await CuentasService.fetchEmpleados();
+      if (res.success && res.data) {
+        setEmpleados(res.data);
+      }
     } catch (error) {
-      console.error("Error cargando datos de cuentas:", error);
+      console.error("Error al cargar empleados:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
-  const [loadingRoles, setLoadingRoles] = useState(false);
-  const [loadingEmpleados, setLoadingEmpleados] = useState(false);
-
+  // Cargar Roles (solo Almacenero y Administrador)
   const cargarRoles = useCallback(async () => {
     setLoadingRoles(true);
     try {
       const res = await AuxService.get_roles_disponibles();
-      if (res.success) setRoles(res.data);
+      if (res.success && res.data) {
+        setRoles(res.data);
+      }
     } catch (error) {
-      console.error("Error cargando roles:", error);
+      console.error("Error al cargar roles:", error);
     } finally {
       setLoadingRoles(false);
     }
   }, []);
 
-  const cargarEmpleadosSinCuenta = useCallback(async () => {
-    setLoadingEmpleados(true);
-    try {
-      const res = await AuxService.get_empleados({ con_cuenta: false });
-      if (res.success) setEmpleadosSinCuenta(res.data);
-    } catch (error) {
-      console.error("Error cargando empleados sin cuenta:", error);
-    } finally {
-      setLoadingEmpleados(false);
-    }
-  }, []);
-
-  const cargarOpcionesFormulario = useCallback(() => {
-    cargarRoles();
-    cargarEmpleadosSinCuenta();
-  }, [cargarRoles, cargarEmpleadosSinCuenta]);
-
   useEffect(() => {
-    cargarCuentas();
-  }, [cargarCuentas]);
+    cargarEmpleados();
+    cargarRoles();
+  }, [cargarEmpleados, cargarRoles]);
 
-  const cuentasFiltradas = useMemo(() => {
-    return cuentas.filter(
-      (c) =>
-        c.username.toLowerCase().includes(busqueda.toLowerCase()) ||
-        c.nombre_empleado.toLowerCase().includes(busqueda.toLowerCase()) ||
-        c.apellido_empleado.toLowerCase().includes(busqueda.toLowerCase()) ||
-        c.nombre_rol.toLowerCase().includes(busqueda.toLowerCase()),
-    );
-  }, [cuentas, busqueda]);
-
-  const handleOpenCreate = useCallback(() => {
-    setSelectedCuenta(null);
-    cargarOpcionesFormulario();
-    openCreate();
-  }, [cargarOpcionesFormulario, openCreate]);
-
-  const handleOpenEdit = useCallback((cuenta: RES_Cuenta) => {
-    setSelectedCuenta(cuenta);
-    cargarOpcionesFormulario();
-    openCreate();
-  }, [cargarOpcionesFormulario, openCreate]);
-
+  // Actualizar Foto de Empleado
   const handleUpdatePhoto = async (idEmpleado: number, file: File) => {
     setUpdatingPhoto(idEmpleado);
     try {
       const res = await CuentasService.actualizarFoto(idEmpleado, file);
       if (res.success) {
-        notify({ type: "success", content: "Foto actualizada correctamente" });
-        // Actualización local sin recargar todo el listado
-        setCuentas((prev) =>
-          prev.map((c) =>
-            c.id_empleado === idEmpleado ? { ...c, url_foto: res.data } : c,
+        notifySuccess("Foto actualizada correctamente");
+        setEmpleados((prev) =>
+          prev.map((e) =>
+            e.id_empleado === idEmpleado ? { ...e, url_foto: res.data } : e,
           ),
         );
       } else {
-        notify({ type: "error", content: res.message });
+        notifyError(res.message || "Error al actualizar la foto");
       }
     } catch {
-      notify({ type: "error", content: "Error al actualizar la foto" });
+      notifyError("Error al subir la imagen");
     } finally {
       setUpdatingPhoto(null);
     }
   };
 
-  const pushNuevaCuenta = useCallback((nueva: RES_Cuenta) => {
-    setCuentas((prev) => [nueva, ...prev]);
-    setEmpleadosSinCuenta((prev) =>
-      prev.filter((e) => e.id_empleado !== nueva.id_empleado),
-    );
-  }, []);
+  // Crear Cuenta para un Empleado
+  const abrirCrearCuenta = (emp: RES_EmpleadoUsuario) => {
+    setEmpleadoParaCuenta(emp);
+  };
+
+  const cerrarCrearCuenta = () => {
+    setEmpleadoParaCuenta(null);
+    setLoadingCrearCuenta(false);
+  };
+
+  const handleCrearCuenta = async (payload: {
+    id_rol: number;
+    username: string;
+    password: string;
+  }) => {
+    if (!empleadoParaCuenta) return;
+    if (!payload.username.trim()) {
+      notifyInfo("El nombre de usuario es obligatorio");
+      return;
+    }
+    if (!payload.id_rol) {
+      notifyInfo("Debe seleccionar un rol");
+      return;
+    }
+    if (!payload.password || payload.password.length < 6) {
+      notifyInfo("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setLoadingCrearCuenta(true);
+    try {
+      const res = await CuentasService.crearCuenta({
+        id_empleado: empleadoParaCuenta.id_empleado,
+        id_rol: payload.id_rol,
+        username: payload.username.trim(),
+        password: payload.password,
+      });
+
+      if (res.success) {
+        notifySuccess(res.message || "Cuenta registrada exitosamente");
+        const rolSeleccionado = roles.find((r) => r.id_rol === payload.id_rol);
+        // Actualización local sin recargar la pantalla
+        setEmpleados((prev) =>
+          prev.map((e) =>
+            e.id_empleado === empleadoParaCuenta.id_empleado
+              ? {
+                  ...e,
+                  id_usuario: res.data?.id_usuario ?? 1,
+                  username: payload.username.trim(),
+                  id_rol: payload.id_rol,
+                  nombre_rol: rolSeleccionado?.nombre || "Usuario",
+                  estado_usuario: "Activo",
+                }
+              : e,
+          ),
+        );
+        cerrarCrearCuenta();
+      } else {
+        notifyError(res.message || "No se pudo crear la cuenta");
+      }
+    } catch {
+      notifyError("Error al registrar cuenta");
+    } finally {
+      setLoadingCrearCuenta(false);
+    }
+  };
+
+  // Editar Cuenta / Cambiar Contraseña
+  const abrirEditarCuenta = (emp: RES_EmpleadoUsuario) => {
+    setEmpleadoParaEditar(emp);
+  };
+
+  const cerrarEditarCuenta = () => {
+    setEmpleadoParaEditar(null);
+    setLoadingEditarCuenta(false);
+  };
+
+  const handleEditarCuenta = async (payload: {
+    id_rol: number;
+    username: string;
+    password?: string;
+  }) => {
+    if (!empleadoParaEditar || !empleadoParaEditar.id_usuario) return;
+    if (!payload.username.trim()) {
+      notifyInfo("El nombre de usuario es obligatorio");
+      return;
+    }
+    if (!payload.id_rol) {
+      notifyInfo("Debe seleccionar un rol");
+      return;
+    }
+    if (payload.password && payload.password.length < 6) {
+      notifyInfo("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setLoadingEditarCuenta(true);
+    try {
+      const res = await CuentasService.actualizarCuenta(
+        empleadoParaEditar.id_usuario,
+        {
+          id_rol: payload.id_rol,
+          username: payload.username.trim(),
+          password: payload.password?.trim() || undefined,
+        },
+      );
+
+      if (res.success) {
+        notifySuccess(res.message || "Cuenta actualizada exitosamente");
+        const rolSeleccionado = roles.find((r) => r.id_rol === payload.id_rol);
+        // Actualización local sin recargar la pantalla
+        setEmpleados((prev) =>
+          prev.map((e) =>
+            e.id_empleado === empleadoParaEditar.id_empleado
+              ? {
+                  ...e,
+                  username: payload.username.trim(),
+                  id_rol: payload.id_rol,
+                  nombre_rol: rolSeleccionado?.nombre || e.nombre_rol,
+                }
+              : e,
+          ),
+        );
+        cerrarEditarCuenta();
+      } else {
+        notifyError(res.message || "No se pudo actualizar la cuenta");
+      }
+    } catch {
+      notifyError("Error al actualizar la cuenta");
+    } finally {
+      setLoadingEditarCuenta(false);
+    }
+  };
+
+  // Registrar Nuevo Empleado
+  const abrirCrearEmpleado = () => setOpenedCrearEmpleado(true);
+  const cerrarCrearEmpleado = () => {
+    setOpenedCrearEmpleado(false);
+    setLoadingCrearEmpleado(false);
+  };
+
+  const handleCrearEmpleado = async (payload: {
+    nombre: string;
+    apellido: string;
+    dni?: string;
+    es_contratista?: boolean;
+  }) => {
+    if (!payload.nombre.trim() || !payload.apellido.trim()) {
+      notifyInfo("Nombre y apellido son requeridos");
+      return;
+    }
+
+    setLoadingCrearEmpleado(true);
+    try {
+      const res = await CuentasService.crearEmpleado({
+        nombre: payload.nombre.trim(),
+        apellido: payload.apellido.trim(),
+        dni: payload.dni?.trim() || null,
+        es_contratista: !!payload.es_contratista,
+      });
+
+      if (res.success && res.data) {
+        notifySuccess("Empleado registrado exitosamente");
+        const nuevoEmp: RES_EmpleadoUsuario = {
+          id_empleado: res.data.id_empleado,
+          nombre: res.data.nombre,
+          apellido: res.data.apellido,
+          nombre_completo: `${res.data.nombre} ${res.data.apellido}`,
+          dni: res.data.dni || null,
+          url_foto: res.data.url_foto || null,
+          es_contratista: !!res.data.es_contratista,
+          estado: "Activo",
+          id_usuario: null,
+          username: null,
+          id_rol: null,
+          nombre_rol: null,
+          estado_usuario: null,
+        };
+        setEmpleados((prev) => [nuevoEmp, ...prev]);
+        cerrarCrearEmpleado();
+      } else {
+        notifyError(res.message || "Error al crear empleado");
+      }
+    } catch {
+      notifyError("Error al registrar empleado");
+    } finally {
+      setLoadingCrearEmpleado(false);
+    }
+  };
+
+  // Filtros y Búsqueda
+  const empleadosFiltrados = useMemo(() => {
+    const q = busqueda.toLowerCase().trim();
+
+    return empleados.filter((emp) => {
+      // Filtro por estado de cuenta
+      if (filtroCuenta === "con_cuenta" && !emp.id_usuario) return false;
+      if (filtroCuenta === "sin_cuenta" && emp.id_usuario) return false;
+
+      // Filtro por texto
+      if (!q) return true;
+
+      const matchNombre = emp.nombre.toLowerCase().includes(q);
+      const matchApellido = emp.apellido.toLowerCase().includes(q);
+      const matchDni = emp.dni ? emp.dni.toLowerCase().includes(q) : false;
+      const matchUsername = emp.username
+        ? emp.username.toLowerCase().includes(q)
+        : false;
+      const matchRol = emp.nombre_rol
+        ? emp.nombre_rol.toLowerCase().includes(q)
+        : false;
+
+      return (
+        matchNombre || matchApellido || matchDni || matchUsername || matchRol
+      );
+    });
+  }, [empleados, busqueda, filtroCuenta]);
+
+  const totalEmpleados = empleados.length;
+  const totalConCuenta = useMemo(
+    () => empleados.filter((e) => !!e.id_usuario).length,
+    [empleados],
+  );
+  const totalSinCuenta = useMemo(
+    () => empleados.filter((e) => !e.id_usuario).length,
+    [empleados],
+  );
 
   return {
-    cuentasFiltradas,
+    empleados: empleadosFiltrados,
+    todosLosEmpleados: empleados,
     roles,
-    empleadosSinCuenta,
     loading,
     loadingRoles,
-    loadingEmpleados,
     busqueda,
     setBusqueda,
-    openedCreate,
-    openCreate: handleOpenCreate,
-    closeCreate,
-    selectedCuenta,
-    setSelectedCuenta,
-    handleOpenEdit,
-    handleUpdatePhoto,
+    filtroCuenta,
+    setFiltroCuenta,
+    totalEmpleados,
+    totalConCuenta,
+    totalSinCuenta,
     updatingPhoto,
-    pushNuevaCuenta,
-    refresh: cargarCuentas,
+    handleUpdatePhoto,
+    // Crear cuenta
+    empleadoParaCuenta,
+    abrirCrearCuenta,
+    cerrarCrearCuenta,
+    handleCrearCuenta,
+    loadingCrearCuenta,
+    // Editar cuenta
+    empleadoParaEditar,
+    abrirEditarCuenta,
+    cerrarEditarCuenta,
+    handleEditarCuenta,
+    loadingEditarCuenta,
+    // Crear empleado
+    openedCrearEmpleado,
+    abrirCrearEmpleado,
+    cerrarCrearEmpleado,
+    handleCrearEmpleado,
+    loadingCrearEmpleado,
+    // Refresco
+    refresh: () => cargarEmpleados(false),
+    refreshSilencioso: () => cargarEmpleados(true),
   };
 };
