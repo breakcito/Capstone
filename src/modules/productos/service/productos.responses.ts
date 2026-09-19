@@ -1,6 +1,6 @@
 import type { EstadoBase } from "../../../shared/enums/_generic/estado-base";
 import type { Moneda } from "../../../shared/enums/_generic/moneda";
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type { RES_CambiosLog } from "../../../service/responses/_generic/cambios-log";
 
 export interface RES_LogCostoPromedio {

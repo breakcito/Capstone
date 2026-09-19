@@ -15,7 +15,7 @@ const ExcelJobRunner = ({ job }: { job: ExcelJob }) => {
         const ExcelJS = (await import("exceljs")).default;
         const workbook = new ExcelJS.Workbook();
 
-        workbook.creator = "BlackSilver ERP";
+        workbook.creator = "Cupper & Hannia ERP";
         workbook.created = new Date();
 
         await job.config.builder(workbook);

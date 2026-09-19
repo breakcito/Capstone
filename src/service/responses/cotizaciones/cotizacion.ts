@@ -2,7 +2,7 @@ import type { MetodoPago } from "../../../shared/enums/_generic/metodo-pago";
 import type { Periodo } from "../../../shared/enums/_generic/periodo";
 import type { TipoDespachoCompra } from "../../../shared/enums/_generic/tipo-despacho-compra";
 import type { TipoEntidad } from "../../../shared/enums/_generic/tipo-entidad";
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type {
   Estado_Cotizacion,
   Estado_Cotizacion_Detalle,

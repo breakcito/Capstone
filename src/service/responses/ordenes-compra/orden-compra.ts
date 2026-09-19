@@ -1,5 +1,5 @@
 import type { MetodoPago } from "../../../shared/enums/_generic/metodo-pago";
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type { Moneda } from "../../../shared/enums/_generic/moneda";
 import type { Periodo } from "../../../shared/enums/_generic/periodo";
 import type { TipoDespachoCompra } from "../../../shared/enums/_generic/tipo-despacho-compra";

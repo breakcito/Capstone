@@ -7,7 +7,7 @@ import type { RES_LoteDisponible } from "../../../../../../service/responses/lot
 import type { RES_ActivoFijoDisponible } from "../../../../../../service/responses/activo-fijo";
 import type { RES_LoteMineral } from "../../../../../../service/responses/lote-mineral";
 import type { DestinoItem } from "../../../../hooks/useRegistrarEntrega";
-import { TipoBien } from "../../../../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../../../../shared/enums/_generic/tipo-producto";
 
 interface GroupByDetalleRequerimientoProps {
   detalle_req: DetalleRequerimientoExtendido;

@@ -1,5 +1,5 @@
 import type { Moneda } from "../../shared/enums/_generic/moneda";
-import type { TipoBien } from "../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../shared/enums/_generic/tipo-producto";
 
 export interface RES_Producto {
   id_producto: number;

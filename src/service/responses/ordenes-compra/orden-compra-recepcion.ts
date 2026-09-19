@@ -1,4 +1,4 @@
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type {
   Estado_OrdenCompraRecepcion,
   Estado_OrdenCompraRecepcionDetalle,

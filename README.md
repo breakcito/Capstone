@@ -1,4 +1,4 @@
-# Cupper & Hannia — API (BlackSilver)
+# Cupper & Hannia — API
 
 API del ERP Cupper & Hannia para la industria minera. Digitaliza y conecta operaciones logísticas entre el corporativo (compras, finanzas) y el campo (almacenes remotos en mina, distribución de insumos).
 
