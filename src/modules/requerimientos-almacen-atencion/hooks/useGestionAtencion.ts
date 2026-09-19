@@ -39,7 +39,6 @@ export const useGestionAtencion = ({
     openedHistorialGlobal,
     { open: openHistorialGlobal, close: closeHistorialGlobal },
   ] = useDisclosure(false);
-  const [isLogisticaModalOpen, setIsLogisticaModalOpen] = useState(false);
 
   // Selected Data
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
@@ -134,21 +133,6 @@ export const useGestionAtencion = ({
     }
   }, [eligibleForDelivery, isAllEligibleSelected]);
 
-  const onConsultarLogisticaClick = () => {
-    setIsLogisticaModalOpen(true);
-  };
-
-  const handleCloseLogisticaModal = () => {
-    setIsLogisticaModalOpen(false);
-    deselectAllItems();
-  };
-
-  const onSuccessLogistica = (ids?: number[]) => {
-    if (!ids) return;
-    handleCloseLogisticaModal();
-    onSuccess(ids);
-  };
-
   const loadData = useCallback(
     async (isSilent = false) => {
       if (!isSilent) setLoading(true);
@@ -160,7 +144,7 @@ export const useGestionAtencion = ({
             resp.data.map((d) => ({
               ...d,
               pendiente_base:
-                d.cantidad_solicitada_base - d.cantidad_entregada_base,
+                d.cantidad_solicitada_base - (d.cantidad_entregada_base ?? 0),
               equivReq:
                 d.cantidad_solicitada > 0
                   ? d.cantidad_solicitada_base / d.cantidad_solicitada
@@ -401,8 +385,6 @@ export const useGestionAtencion = ({
       (item) =>
         item.estado !== Estado_RequerimientoDetalleLog.Rechazado.toString() &&
         item.estado !==
-          Estado_RequerimientoDetalleLog.RechazadoLogistica.toString() &&
-        item.estado !==
           Estado_RequerimientoDetalleLog.EsperandoAprobacion.toString() &&
         (item.estado as string) !== "Anulado",
     );
@@ -460,12 +442,6 @@ export const useGestionAtencion = ({
     handleDecisionMasiva,
     getStatusColor,
     loadData,
-    logistica: {
-      isOpen: isLogisticaModalOpen,
-      open: onConsultarLogisticaClick,
-      close: handleCloseLogisticaModal,
-      onSuccess: onSuccessLogistica,
-    },
     patchDetallesLocales,
   };
 };

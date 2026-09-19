@@ -28,7 +28,6 @@ import { type DataTableColumn } from "mantine-datatable";
 import { useEntregas } from "../hooks/useEntregas.ts";
 import type { IArchivo } from "../../../shared/interfaces/archivo.ts";
 import { Estado_Requerimiento } from "../../../shared/enums/requerimiento-almacen/requerimiento.ts";
-import { Premura } from "../../../shared/enums/_generic/premura.ts";
 import { useTitlePage } from "../../../hooks/useTitlePage.ts";
 import { DataTableEstandar } from "../../../presentation/utils/datatable-estandar.tsx";
 import { ModalEstandar } from "../../../presentation/utils/modal-estandar.tsx";
@@ -136,88 +135,41 @@ export const RequerimientosAlmacenAtencionPage = () => {
         ),
       },
       {
-        accessor: "Labor",
-        title: "Labor",
+        accessor: "almacen_destino",
+        title: "Almacén Destino",
         width: 180,
         textAlign: "left",
         render: (item) => (
           <Group gap="xs" wrap="nowrap">
             <MapPinIcon className="w-5 h-5 text-zinc-500 shrink-0" />
-            {item.labor ? (
-              <Text size="sm" className="text-zinc-200">
-                {item.labor}
-              </Text>
-            ) : (
-              <Text size="xs" className="italic" c="dimmed">
-                No especificada
-              </Text>
-            )}
+            <Text size="sm" className="text-zinc-200">
+              {item.almacen_destino || "No especificado"}
+            </Text>
           </Group>
         ),
       },
       {
         accessor: "fechas",
-        title: "Programación",
+        title: "Fecha Solicitud",
         width: 180,
         render: (item) => {
-          const fechaReq =
-            item.fecha_entrega_requerida &&
-            dayjs(item.fecha_entrega_requerida).isValid()
-              ? dayjs(item.fecha_entrega_requerida).format("DD/MM/YYYY")
-              : "No especificada";
-
           const fechaSol =
             item.fecha_solicitud && dayjs(item.fecha_solicitud).isValid()
               ? dayjs(item.fecha_solicitud).format("DD/MM/YYYY")
-              : null;
+              : "No especificada";
 
           return (
             <Stack gap={2}>
               <Group gap={6}>
                 <CalendarDaysIcon className="w-4 h-4 text-zinc-500" />
                 <Text size="xs" fw={600} className="text-zinc-200">
-                  Para: {fechaReq}
+                  {fechaSol}
                 </Text>
               </Group>
-              {fechaSol && (
-                <Text size="xs" c="blue.4" ml={22}>
-                  Solicitada: {fechaSol}
-                </Text>
-              )}
               <Text size="xs" c="dimmed" ml={22}>
                 Creado: {dayjs(item.created_at).format("DD/MM/YYYY HH:mm")}
               </Text>
             </Stack>
-          );
-        },
-      },
-      {
-        accessor: "premura",
-        title: "Prioridad",
-        width: 120,
-        render: (item) => {
-          const getPremuraColor = (premura: string) => {
-            switch (premura) {
-              case Premura.Normal:
-                return "blue";
-              case Premura.Urgente:
-                return "orange";
-              case Premura.Emergencia:
-                return "red";
-              default:
-                return "zinc";
-            }
-          };
-          const color = getPremuraColor(item.premura);
-          return (
-            <Badge
-              color={color}
-              variant="light"
-              size="sm"
-              className="uppercase"
-            >
-              {item.premura}
-            </Badge>
           );
         },
       },

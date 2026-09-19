@@ -16,7 +16,7 @@ interface RegistrarEntregaProps {
   selectedItemsIds: number[];
   detallesRequerimiento: RES_DetalleRequerimiento[];
   idContratistaSolicitante: number | null;
-  idEmpleadoSolicitante: number | null;
+  idEmpleadoSolicitante?: number | null;
   onSuccess: (entregados: Record<number, number>) => void;
   onCancel: () => void;
 }
@@ -69,7 +69,7 @@ export const RegistrarEntrega = ({
     selectedItemsIds,
     detallesRequerimiento,
     idContratistaSolicitante,
-    idEmpleadoSolicitante,
+    idEmpleadoSolicitante: idEmpleadoSolicitante ?? null,
     onSuccess: (entregados) => {
       onSuccess(entregados);
     },

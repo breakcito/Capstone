@@ -40,7 +40,7 @@ export const useLotesPage = () => {
       setLoadingAlmacenes(true);
       try {
         const result = await AuxService.get_almacenes({
-          id_empleado_responsable: useAuthStore.getState().usuario?.id_empleado,
+          id_empleado_responsable: useAuthStore.getState().usuario?.id_rol == 1 ? useAuthStore.getState().usuario?.id_empleado : undefined,
         });
         if (result.success) {
           setAlmacenes(result.data);

@@ -10,8 +10,6 @@ const COLOR_HEADER_TEXT = "FFFFFFFF";
 const COLOR_BORDER = "FFCBD5E1";
 const COLOR_CABECERA_BG = "FFEEF2FF";
 const COLOR_CABECERA_TEXT = "FF1E1B4B";
-const COLOR_AUDITABLE_BG = "FFFEE2E2";
-const COLOR_AUDITABLE_TEXT = "FF991B1B";
 const COLOR_ROW_ALT = "FFFAFAFA";
 
 const CANTIDAD_HEADERS = [
@@ -127,19 +125,13 @@ export const buildRequerimientosExcel = async (
     const fechaSol = req.fecha_solicitud
       ? dayjs(req.fecha_solicitud).format("DD/MM/YYYY")
       : "—";
-    const fechaEnt = req.fecha_entrega_requerida
-      ? dayjs(req.fecha_entrega_requerida).format("DD/MM/YYYY")
-      : "—";
-    const esAuditableTag = req.es_auditable ? "  •  AUDITABLE" : "";
 
     const cabeceraText =
       `${req.correlativo}  •  Solicitante: ${req.solicitante}` +
-      `  •  Labor: ${req.labor || "—"}` +
       `  •  Almacén: ${req.almacen_destino}` +
-      `\nF. Solicitud: ${fechaSol}    F. Entrega: ${fechaEnt}` +
-      `    Premura: ${req.premura}    Estado: ${req.estado}` +
-      (req.observacion ? `    Obs: ${req.observacion}` : "") +
-      esAuditableTag;
+      `\nF. Solicitud: ${fechaSol}` +
+      `    Estado: ${req.estado}` +
+      (req.observacion ? `    Obs: ${req.observacion}` : "");
 
     sheet.mergeCells(`A${rowIdx}:I${rowIdx}`);
     const cabCell = sheet.getCell(`A${rowIdx}`);
@@ -148,14 +140,14 @@ export const buildRequerimientosExcel = async (
       type: "pattern",
       pattern: "solid",
       fgColor: {
-        argb: req.es_auditable ? COLOR_AUDITABLE_BG : COLOR_CABECERA_BG,
+        argb: COLOR_CABECERA_BG,
       },
     };
     cabCell.font = {
       bold: true,
       size: 10,
       color: {
-        argb: req.es_auditable ? COLOR_AUDITABLE_TEXT : COLOR_CABECERA_TEXT,
+        argb: COLOR_CABECERA_TEXT,
       },
       name: "Arial",
     };
@@ -203,8 +195,18 @@ export const buildRequerimientosExcel = async (
         r.getCell(3).value = det.unidad_medida_req_abv;
         r.getCell(4).value = Number(det.cantidad_solicitada || 0);
         r.getCell(5).value = det.unidad_medida_base_abv;
-        r.getCell(6).value = Number(det.cantidad_solicitada_base || 0);
-        r.getCell(7).value = `${det.porcentaje_progreso || 0}%`;
+        const pct =
+          det.cantidad_solicitada_base > 0
+            ? Math.min(
+                100,
+                Math.round(
+                  ((det.cantidad_entregada_base ?? 0) /
+                    det.cantidad_solicitada_base) *
+                    100,
+                ),
+              )
+            : 0;
+        r.getCell(7).value = `${pct}%`;
         r.getCell(8).value = det.estado;
         r.getCell(9).value = det.comentario || "";
 
@@ -217,19 +219,6 @@ export const buildRequerimientosExcel = async (
         r.getCell(8).alignment = { horizontal: "center" };
 
         applyDataRowStyle(r, COLOR_ROW_ALT, alterna);
-        if (det.es_auditable) {
-          r.getCell(2).fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFEE2E2" },
-          };
-          r.getCell(2).font = {
-            ...(r.getCell(2).font || {}),
-            color: { argb: COLOR_AUDITABLE_TEXT },
-            bold: true,
-            name: "Arial",
-          };
-        }
         rowIdx += 1;
       });
     }

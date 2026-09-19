@@ -21,6 +21,9 @@ export function getDuracionPeriodo(
     [Periodo.Mensual]: 30,
     [Periodo.Anual]: 365,
     [Periodo.Ninguno]: 0,
+    [Periodo.Dias]: 1,
+    [Periodo.Meses]: 30,
+    [Periodo.Anos]: 365,
   };
 
   const factorOrigen = diasPorPeriodo[periodo];

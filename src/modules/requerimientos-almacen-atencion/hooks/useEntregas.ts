@@ -42,7 +42,6 @@ export const useEntregas = ({ setError: externalSetError }: IUseHook) => {
     try {
       const resp = await AuxService.get_almacenes({
         id_empleado_responsable: useAuthStore.getState().usuario?.id_empleado,
-        es_principal: false,
       });
       if (resp.success) {
         setAlmacenes(resp.data);
@@ -98,13 +97,13 @@ export const useEntregas = ({ setError: externalSetError }: IUseHook) => {
   // -- Filtrado --
   const filteredRecords = useMemo(() => {
     const q = busqueda.toLowerCase().trim();
-    const result = data.filter((p) => !(en_modo_auditable && p.es_auditable));
+    const result = data;
     if (!q) return result;
     return result.filter(
       (item) =>
         item.correlativo.toLowerCase().includes(q) ||
         item.solicitante.toLowerCase().includes(q) ||
-        item.labor.toLowerCase().includes(q),
+        (item.almacen_destino ?? "").toLowerCase().includes(q),
     );
   }, [data, busqueda, en_modo_auditable]);
 

@@ -11,9 +11,12 @@ import type {
   RES_RequerimientoAlmacen,
 } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import { AuxService } from "../../../service/auxiliar.service";
-import type { RES_ActivoFijoDisponible } from "../../../service/responses/activo-fijo";
-import type { RES_LoteMineral } from "../../../service/responses/lote-mineral";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
+type RES_ActivoFijoDisponible = any;
+type RES_LoteMineral = any;
+enum TipoBien {
+  Producto = "Producto",
+  ActivoFijo = "Activo Fijo",
+}
 import { useNotify } from "../../../hooks/useNotify";
 import { usePrint } from "../../../hooks/usePrint";
 import {
@@ -143,28 +146,16 @@ export const useRegistrarEntregaBatch = ({
           return;
         }
 
-        const [
-          resEmps,
-          resLotes,
-          resActivos,
-          resAllActivos,
-          resLotesMineral,
-          resContratistas,
-        ] = await Promise.all([
+        const [resEmps, resLotes, resContratistas] = await Promise.all([
           AuxService.get_empleados(),
           idsConLote.length > 0
             ? AuxService.get_lotes_disponibles(idAlmacen, idsConLote)
             : Promise.resolve({ success: true, data: [] }),
-          idsActivoFijo.length > 0
-            ? AuxService.get_activos_disponibles({
-                // id_almacen: idAlmacen,
-                ids_productos: idsActivoFijo,
-              })
-            : Promise.resolve({ success: true, data: [] }),
-          AuxService.get_activos_disponibles(),
-          AuxService.get_lotes_mineral(),
           AuxService.get_contratistas(),
         ]);
+        const resActivos = { success: true, data: [] };
+        const resAllActivos = { success: true, data: [] };
+        const resLotesMineral = { success: true, data: [] };
 
         if (cancelled) return;
 
@@ -173,7 +164,7 @@ export const useRegistrarEntregaBatch = ({
             ? resLotesMineral.data
             : [];
         const firstLoteMineralId =
-          mineralBatches.length > 0 ? mineralBatches[0].id_lote_mineral : null;
+          mineralBatches.length > 0 ? (mineralBatches[0] as any).id_lote_mineral : null;
         const initialDestinos: Record<string, DestinoItem> = {};
 
         if (resLotes.success) {
@@ -365,7 +356,8 @@ export const useRegistrarEntregaBatch = ({
         );
 
         const pendienteMaxDetalle =
-          detail.cantidad_solicitada_base - detail.cantidad_entregada_base;
+          detail.cantidad_solicitada_base -
+          (detail.cantidad_entregada_base ?? 0);
 
         // Max allowed is 1, but bounded by remaining pending
         const maxAllowed = Math.max(
@@ -418,7 +410,8 @@ export const useRegistrarEntregaBatch = ({
         );
 
         const pendienteMaxDetalle =
-          detail.cantidad_solicitada_base - detail.cantidad_entregada_base;
+          detail.cantidad_solicitada_base -
+          (detail.cantidad_entregada_base ?? 0);
 
         // Máximo que puede aportar este lote al ítem específico:
         // El menor entre (su stock disponible REAL) y (lo que falta por entregar para el ítem)

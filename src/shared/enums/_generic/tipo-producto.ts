@@ -6,3 +6,8 @@ export enum TipoProducto {
   EPPs = "EPPs",
   Otros = "Otros",
 }
+
+export enum TipoBien {
+  Producto = "Producto",
+  ActivoFijo = "Activo Fijo",
+}

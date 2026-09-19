@@ -79,7 +79,7 @@ export const RegistroEmpleado = ({
   const [openedAddCargo, setOpenedAddCargo] = useState(false);
 
   const regArea = useRegistroArea(
-    (nuevaArea) => {
+    (nuevaArea: any) => {
       setAreas((prev) => [...prev, nuevaArea]);
       setIdArea(nuevaArea.id_area);
       setOpenedAddArea(false);
@@ -88,7 +88,7 @@ export const RegistroEmpleado = ({
   );
 
   const regCargo = useRegistroCargo(
-    (nuevoCargo) => {
+    (nuevoCargo: any) => {
       setTodosCargos((prev) => [...prev, nuevoCargo]);
       setField("id_cargo", nuevoCargo.id_cargo);
       if (nuevoCargo.id_area) {
@@ -508,7 +508,7 @@ export const RegistroEmpleado = ({
       >
         <FormularioContratoEmpleado
           idEmpleado={0}
-          onSuccess={(payload) => {
+          onSuccess={(payload: any) => {
             cerrarModalContrato();
             const data = payload as { empleado?: RES_EmpleadoResumen };
             if (data?.empleado) {

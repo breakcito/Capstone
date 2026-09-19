@@ -14,7 +14,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   TruckIcon,
-  PaperAirplaneIcon,
   NoSymbolIcon,
 } from "@heroicons/react/24/outline";
 import { Estado_RequerimientoDetalle } from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
@@ -35,7 +34,6 @@ interface InfoItemsTableProps {
   setSelectedItemId: (id: number | null) => void;
   openAprobar: () => void;
   openRechazo: () => void;
-  logistica: { open: () => void };
   isAllPendingSelected: boolean;
   seleccionarTodoLoPendiente: () => void;
   getStatusColor: (status: string) => string;
@@ -58,7 +56,6 @@ export const InfoItemsTable = ({
   setSelectedItemId,
   openAprobar,
   openRechazo,
-  logistica,
   isAllPendingSelected,
   seleccionarTodoLoPendiente,
   getStatusColor,
@@ -134,22 +131,6 @@ export const InfoItemsTable = ({
               </Button>
             </>
           )}
-          <Button
-            color="blue"
-            variant="light"
-            size="xs"
-            leftSection={<PaperAirplaneIcon className="size-4" />}
-            disabled={
-              !detalles.some(
-                (d) =>
-                  d.estado ===
-                  Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
-              )
-            }
-            onClick={logistica.open}
-          >
-            Consultar con Logística
-          </Button>
           <Badge variant="light" color="indigo" radius="md">
             {detalles.length} {detalles.length === 1 ? "Producto" : "Productos"}
           </Badge>
@@ -376,11 +357,11 @@ export const InfoItemsTable = ({
                     <div className="flex flex-col gap-1.5 w-full">
                       <div className="flex justify-between items-center px-1">
                         <Text size="10px" fw={800} c="zinc.5">
-                          Atendido: {formatNumber(item.cantidad_entregada)}{" "}
+                          Atendido: {formatNumber(item.cantidad_entregada ?? 0)}{" "}
                           {item.unidad_medida_req_abv}
                         </Text>
                         <Text size="10px" fw={900} c="indigo.4">
-                          {item.porcentaje_progreso}%
+                          {item.porcentaje_progreso ?? 0}%
                         </Text>
                       </div>
                       <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/30">

@@ -2,7 +2,6 @@ import { Document, Page, View, Text } from "@react-pdf/renderer";
 import dayjs from "dayjs";
 import { createTw } from "react-pdf-tailwind";
 import { formatNumber } from "../../../shared/functions/formatNumber";
-import { Premura } from "../../../shared/enums/_generic/premura";
 import type { RES_RequerimientoAlmacen } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 
 const tw = createTw({});
@@ -12,18 +11,6 @@ interface Props {
 }
 
 export const RequerimientoPDF = ({ requerimiento: req }: Props) => {
-  const getPremuraColorBg = (premura: string) => {
-    switch (premura) {
-      case Premura.Normal:
-        return tw("bg-blue-500");
-      case Premura.Urgente:
-        return tw("bg-orange-500");
-      case Premura.Emergencia:
-        return tw("bg-red-500");
-      default:
-        return tw("bg-zinc-500");
-    }
-  };
 
   return (
     <Document title={`Requerimiento - ${req.correlativo}`}>
@@ -70,66 +57,29 @@ export const RequerimientoPDF = ({ requerimiento: req }: Props) => {
             </View>
 
             <View style={tw("flex-1")}>
-              {/* Labor */}
+              {/* Fecha de solicitud */}
               <Text
                 style={tw("text-[8pt] font-bold text-zinc-500 mb-1 uppercase")}
               >
-                Labor
+                Fecha Solicitud
               </Text>
-              {req.labor ? (
-                <Text style={tw("text-[10pt] font-bold text-zinc-900")}>
-                  {req.labor}
-                </Text>
-              ) : (
-                <Text style={tw("text-[10pt] font-bold text-zinc-900")}>
-                  ---
-                </Text>
-              )}
+              <Text style={tw("text-[10pt] font-bold text-zinc-900")}>
+                {req.fecha_solicitud
+                  ? dayjs(req.fecha_solicitud).format("DD/MM/YYYY")
+                  : dayjs(req.created_at).format("DD/MM/YYYY")}
+              </Text>
             </View>
 
             <View style={tw("flex-1")}>
-              {/* fecha de entrega requerida */}
+              {/* Estado */}
               <Text
                 style={tw("text-[8pt] font-bold text-zinc-500 mb-1 uppercase")}
               >
-                Fecha Entrega
+                Estado
               </Text>
-              <Text
-                style={tw(
-                  `text-[10pt] font-bold ${
-                    req.fecha_entrega_requerida
-                      ? "text-zinc-900"
-                      : "text-zinc-500"
-                  }`,
-                )}
-              >
-                {req.fecha_entrega_requerida
-                  ? dayjs(req.fecha_entrega_requerida).format("DD/MM/YYYY")
-                  : "No Especificada"}
+              <Text style={tw("text-[10pt] font-bold text-zinc-900")}>
+                {req.estado}
               </Text>
-            </View>
-          </View>
-
-          <View style={tw("flex-row mt-4")}>
-            <View style={tw("w-1/3")}>
-              {/* premura */}
-              <Text
-                style={tw("text-[8pt] font-bold text-zinc-500 mb-1 uppercase")}
-              >
-                Prioridad
-              </Text>
-              <View style={tw("self-start")}>
-                <View
-                  style={[
-                    tw("px-2 py-1 rounded"),
-                    getPremuraColorBg(req.premura),
-                  ]}
-                >
-                  <Text style={tw("text-white text-[8pt] font-bold uppercase")}>
-                    {req.premura}
-                  </Text>
-                </View>
-              </View>
             </View>
           </View>
 

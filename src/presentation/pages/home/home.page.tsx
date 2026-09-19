@@ -6,6 +6,7 @@ import { useTitlePage } from "../../../hooks/useTitlePage";
 import { useRandomLinks, type ILinkView } from "./useRandomLinks";
 import { motion } from "motion/react";
 import { useBlackcito } from "../../../hooks/useBlackcito";
+import { AdminMetrics } from "./admin-metrics";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -63,13 +64,16 @@ export const HomePage = () => {
           Hola, {usuario?.nombre || "Usuario"}
         </h1>
         <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto">
-          ¿Qué deseas hacer hoy? Aquí tienes algunas vistas de acceso rápido que
-          podrían interesarte.
+          {usuario?.id_rol === 2
+            ? "Panel general del sistema. Métricas y monitoreo consolidado de operaciones y almacenes."
+            : "¿Qué deseas hacer hoy? Aquí tienes tus accesos directos a los módulos asignados."}
         </p>
       </div>
 
-      {/* acciones rapidas */}
-      {randomLinks.length > 0 ? (
+      {/* Vista según rol: Administrador (2) vs Almacenero (1) */}
+      {usuario?.id_rol === 2 ? (
+        <AdminMetrics />
+      ) : randomLinks.length > 0 ? (
         <motion.div
           variants={containerVariants}
           initial="hidden"

@@ -4,7 +4,6 @@ import type { IArchivo } from "../../../shared/interfaces/archivo";
 import type {
   DTO_AtencionCambiarEstado,
   DTO_RegistrarEntrega,
-  DTO_CrearSolicitudLogistica,
   DTO_CrearRequerimiento,
   DTO_EditarRequerimiento,
 } from "./atencion.requests";
@@ -20,27 +19,13 @@ const path = "/requerimientos-atencion";
 export const AtencionService = {
   registrarRequerimiento: async (dto: DTO_CrearRequerimiento) => {
     const formData = new FormData();
-    if (dto.id_empleado_solicitante) {
-      formData.append(
-        "id_empleado_solicitante",
-        String(dto.id_empleado_solicitante),
-      );
-    }
     if (dto.id_contratista_solicitante) {
       formData.append(
         "id_contratista_solicitante",
         String(dto.id_contratista_solicitante),
       );
     }
-    if (dto.id_labor && dto.id_labor > 0) {
-      formData.append("id_labor", String(dto.id_labor));
-    }
     formData.append("id_almacen_destino", String(dto.id_almacen_destino));
-    formData.append("premura", dto.premura);
-    formData.append("es_auditable", dto.es_auditable ? "1" : "0");
-    if (dto.fecha_entrega_requerida) {
-      formData.append("fecha_entrega_requerida", dto.fecha_entrega_requerida);
-    }
     if (dto.fecha_solicitud) {
       formData.append("fecha_solicitud", dto.fecha_solicitud);
     }
@@ -67,12 +52,6 @@ export const AtencionService = {
       );
       if (det.comentario) {
         formData.append(`detalles[${index}][comentario]`, det.comentario);
-      }
-      if (det.id_activo_fijo_destino) {
-        formData.append(
-          `detalles[${index}][id_activo_fijo_destino]`,
-          String(det.id_activo_fijo_destino),
-        );
       }
       // Campos de cálculo inteligente con magnitud
       if (det.con_magnitud !== undefined) {
@@ -200,9 +179,9 @@ export const AtencionService = {
   },
 
   obtenerRequerimientos: async (
-    idAlmacen: string,
-    mes: string,
-    yearcito: string,
+    idAlmacen?: string,
+    mes?: string,
+    yearcito?: string,
   ) => {
     const res = await api.get<IRespuesta<RES_RequerimientoAlmacen[]>>(
       `${path}/requerimientos`,
@@ -213,13 +192,6 @@ export const AtencionService = {
     return res.data;
   },
 
-  registrarSolicitudLogistica: async (dto: DTO_CrearSolicitudLogistica) => {
-    const res = await api.post<IRespuesta<null>>(
-      `${path}/save-solicitud-logistica`,
-      dto,
-    );
-    return res.data;
-  },
 
   subirEvidencias: async (idRequerimiento: number, evidencias: File[]) => {
     const formData = new FormData();
@@ -242,14 +214,6 @@ export const AtencionService = {
   ) => {
     const formData = new FormData();
 
-    if (dto.id_empleado_solicitante !== undefined) {
-      formData.append(
-        "id_empleado_solicitante",
-        dto.id_empleado_solicitante === null
-          ? ""
-          : String(dto.id_empleado_solicitante),
-      );
-    }
     if (dto.id_contratista_solicitante !== undefined) {
       formData.append(
         "id_contratista_solicitante",
@@ -258,26 +222,11 @@ export const AtencionService = {
           : String(dto.id_contratista_solicitante),
       );
     }
-    if (dto.id_labor !== undefined) {
-      formData.append(
-        "id_labor",
-        dto.id_labor === null ? "" : String(dto.id_labor),
-      );
-    }
-    if (dto.premura !== undefined) {
-      formData.append("premura", dto.premura);
-    }
-    if (dto.fecha_entrega_requerida !== undefined) {
-      formData.append("fecha_entrega_requerida", dto.fecha_entrega_requerida);
-    }
     if (dto.fecha_solicitud !== undefined) {
       formData.append("fecha_solicitud", dto.fecha_solicitud);
     }
     if (dto.observacion !== undefined) {
       formData.append("observacion", dto.observacion);
-    }
-    if (dto.es_auditable !== undefined) {
-      formData.append("es_auditable", dto.es_auditable ? "1" : "0");
     }
 
     (dto.detalles_editar ?? []).forEach((det, index) => {
@@ -307,20 +256,6 @@ export const AtencionService = {
         formData.append(
           `detalles_editar[${index}][comentario]`,
           det.comentario ?? "",
-        );
-      }
-      if (det.para_mantenimiento !== undefined) {
-        formData.append(
-          `detalles_editar[${index}][para_mantenimiento]`,
-          det.para_mantenimiento ? "1" : "0",
-        );
-      }
-      if (det.id_activo_fijo_destino !== undefined) {
-        formData.append(
-          `detalles_editar[${index}][id_activo_fijo_destino]`,
-          det.id_activo_fijo_destino === null
-            ? ""
-            : String(det.id_activo_fijo_destino),
         );
       }
       if (det.con_magnitud !== undefined) {
@@ -372,12 +307,6 @@ export const AtencionService = {
       );
       if (det.comentario) {
         formData.append(`detalles_crear[${index}][comentario]`, det.comentario);
-      }
-      if (det.id_activo_fijo_destino) {
-        formData.append(
-          `detalles_crear[${index}][id_activo_fijo_destino]`,
-          String(det.id_activo_fijo_destino),
-        );
       }
       if (det.con_magnitud !== undefined) {
         formData.append(
