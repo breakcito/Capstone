@@ -24,11 +24,9 @@ import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useRegistroProducto } from "../hooks/useRegistroProducto";
 import type { RES_ProductoResumen } from "../service/productos.responses";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import { Moneda } from "../../../shared/enums/_generic/moneda";
 import { useDisclosure } from "@mantine/hooks";
 import { ModalEstandar } from "../../../presentation/utils/modal-estandar";
-import { FormCategoria } from "../../../presentation/utils/form-categoria";
 import { FormUnidadMedida } from "../../../presentation/utils/form-unidad-medida";
 import { LabelForm } from "./components/label-form";
 import { useMemo } from "react";
@@ -54,13 +52,10 @@ export const RegistroProducto = ({
   const {
     form,
     setField,
-    categorias,
     unidades,
     coincidencias,
     loading,
-    loadingCategorias,
     loadingUnidades,
-    cargarCategorias,
     cargarUnidades,
     handleSubmit,
     isEdit,
@@ -71,10 +66,7 @@ export const RegistroProducto = ({
     productoEdicion,
   });
 
-  const isActivoFijo = useMemo(() => {
-    const cat = categorias.find((c) => c.id_categoria === form.id_categoria);
-    return cat?.clasificacion_bien === TipoBien.ActivoFijo;
-  }, [form.id_categoria, categorias]);
+  const isActivoFijo = false;
 
   // Agrupar coincidencias por categoría para el diseño del dropdown
   const groupedCoincidencias = useMemo(() => {
@@ -89,9 +81,6 @@ export const RegistroProducto = ({
 
   const [focused, setFocused] = useDisclosure(false);
 
-  const [openedAddCat, { open: openAddCat, close: closeAddCat }] =
-    useDisclosure(false);
-
   const [openedAddUnidad, { open: openAddUnidad, close: closeAddUnidad }] =
     useDisclosure(false);
 
@@ -99,49 +88,8 @@ export const RegistroProducto = ({
     <LazyMotion features={domAnimation}>
       <Stack gap="lg" mt="xs">
         {/* Fila 1: Categoría y Nombre */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <LabelForm text="Categoría" required />
-            <div className="flex gap-2 items-center">
-              <Select
-                placeholder={
-                  loadingCategorias ? "Cargando..." : "Seleccione categoría"
-                }
-                data={categorias.map((c) => ({
-                  value: c.id_categoria.toString(),
-                  label: c.nombre,
-                }))}
-                value={
-                  form.id_categoria === 0 ? null : form.id_categoria.toString()
-                }
-                onChange={(val) => setField("id_categoria", Number(val))}
-                classNames={{
-                  input:
-                    "bg-zinc-900/50 border-zinc-800 focus:border-zinc-300 focus:ring-1 focus:ring-zinc-300 text-white placeholder:text-zinc-500 h-10",
-                }}
-                radius="lg"
-                searchable
-                clearable
-                comboboxProps={{
-                  withinPortal: true,
-                  transitionProps: { transition: "pop", duration: 200 },
-                }}
-                disabled={loadingCategorias}
-                className="flex-1"
-              />
-              <ActionIcon
-                size={"lg"}
-                radius="lg"
-                variant="filled"
-                color="indigo"
-                className="shrink-0 bg-indigo-600 hover:bg-indigo-700 transition-colors"
-                onClick={openAddCat}
-              >
-                <PlusIcon className="w-5 h-5 text-white" />
-              </ActionIcon>
-            </div>
-          </div>
-
+        {/* Fila 1: Nombre */}
+        <div className="grid grid-cols-1 gap-4">
           <Popover
             opened={coincidencias.length > 0 && !!focused}
             position="bottom"
@@ -390,7 +338,7 @@ export const RegistroProducto = ({
               </Text>
             }
             placeholder="0.00"
-            value={form.costo_promedio_base}
+            value={form.costo_promedio_base ?? undefined}
             onChange={(val) => setField("costo_promedio_base", Number(val))}
             classNames={{
               input:
@@ -556,24 +504,6 @@ export const RegistroProducto = ({
             {isEdit ? "Guardar Cambios" : "Registrar Producto"}
           </Button>
         </Group>
-
-        {/* MODAL CREAR CATEGORÍA */}
-        <ModalEstandar
-          opened={openedAddCat}
-          close={closeAddCat}
-          title="Nueva Categoría"
-          size="md"
-          zIndex={1001} // Para que se vea por encima del modal de producto
-        >
-          <FormCategoria
-            onSuccess={(nueva) => {
-              cargarCategorias();
-              setField("id_categoria", nueva.id_categoria);
-              closeAddCat();
-            }}
-            onCancel={closeAddCat}
-          />
-        </ModalEstandar>
 
         {/* MODAL CREAR UNIDAD DE MEDIDA */}
         <ModalEstandar

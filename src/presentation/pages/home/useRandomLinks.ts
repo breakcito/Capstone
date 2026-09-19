@@ -24,25 +24,42 @@ export const useRandomLinks = () => {
 
     const accesses: IAccesoRapido[] = [];
     menu.forEach((menuItem) => {
-      if (!Array.isArray(menuItem.submenus)) return;
-
       const menuIconData = iconos_menu_navegacion.find(
         (i) => i.menu_path === menuItem.path,
       );
 
-      menuItem.submenus.forEach((submenu) => {
-        if (!Array.isArray(submenu.modulos)) return;
+      if (!menuItem.submenus || menuItem.submenus.length === 0) {
+        const icon = menuIconData?.icono || CubeIcon;
+        accesses.push({
+          title: menuItem.nombre,
+          desc: "Módulo principal",
+          icon: icon,
+          url: `/${menuItem.path}`,
+        });
+        return;
+      }
 
-        const submenuIconData = menuIconData?.submenus?.find(
-          (s) => s.submenu_path === submenu.path,
-        );
-        const icon = submenuIconData?.icono || CubeIcon;
+      menuItem.submenus.forEach((submenu) => {
+        if (!submenu.modulos || submenu.modulos.length === 0) {
+          const submenuIconData = menuIconData?.submenus?.find(
+            (s) => s.submenu_path === submenu.path,
+          );
+          const icon =
+            submenuIconData?.icono || menuIconData?.icono || CubeIcon;
+          accesses.push({
+            title: submenu.nombre,
+            desc: menuItem.nombre,
+            icon: icon,
+            url: `/${submenu.path}`,
+          });
+          return;
+        }
 
         submenu.modulos.forEach((modulo) => {
           accesses.push({
             title: modulo.nombre,
             desc: submenu.nombre,
-            icon: icon,
+            icon: menuIconData?.icono || CubeIcon,
             url: `/${modulo.path}`,
           });
         });
@@ -57,8 +74,7 @@ export const useRandomLinks = () => {
     // Solo generamos los links aleatorios si aún no tenemos ninguno, para evitar saltos
     // cuando el menu se actualiza en el layout en background
     if (randomLinks.length === 0 && allAccesses.length > 0) {
-      const shuffled = [...allAccesses].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 3);
+      const selected = allAccesses;
 
       const availableGradients = [
         {

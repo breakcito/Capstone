@@ -2,14 +2,52 @@ import { Paper, Stack, Group, Text, Button, Tooltip } from "@mantine/core";
 import {
   UserIcon,
   CheckBadgeIcon,
-  MapPinIcon,
-  ClockIcon,
+  BuildingStorefrontIcon,
+  CalendarDaysIcon,
   PencilSquareIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import { HeaderCard } from "../../../../prestamos-almacen-atencion/presentation/components/detail-elements";
 import type { RES_RequerimientoAlmacen } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
+
+interface HeaderCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  color?: string;
+}
+
+const HeaderCard = ({ icon: Icon, label, value }: HeaderCardProps) => (
+  <Paper
+    p="md"
+    radius="lg"
+    className="bg-zinc-500/10 border border-zinc-500/20 relative overflow-hidden group hover:bg-zinc-500/20 transition-all"
+  >
+    <Icon className="absolute -right-2 -bottom-2 size-16 text-zinc-400/10 rotate-12 group-hover:scale-110 transition-transform" />
+    <Stack gap={2} className="relative z-10 w-full h-full">
+      <Group gap={6} className="shrink-0">
+        <Icon className="size-4 text-zinc-500" />
+        <Text
+          size="xs"
+          c="zinc.5"
+          fw={800}
+          className="uppercase tracking-widest"
+        >
+          {label}
+        </Text>
+      </Group>
+      <div className="flex-1 flex items-center min-h-6">
+        <Text
+          size="md"
+          fw={800}
+          className="text-zinc-100 tracking-tight leading-tight"
+        >
+          {value}
+        </Text>
+      </div>
+    </Stack>
+  </Paper>
+);
 
 interface InfoHeaderProps {
   requerimiento: RES_RequerimientoAlmacen;
@@ -37,44 +75,21 @@ export const InfoHeader = ({
         color="violet"
       />
       <HeaderCard
-        icon={MapPinIcon}
-        label="Labor"
-        value={requerimiento.labor ?? "---"}
+        icon={BuildingStorefrontIcon}
+        label="Almacén Destino"
+        value={requerimiento.almacen_destino ?? "---"}
         color="amber"
       />
-      <Paper
-        p="md"
-        radius="lg"
-        className="bg-zinc-500/10 border border-zinc-500/20 relative overflow-hidden group hover:bg-zinc-500/20 transition-all"
-      >
-        <ClockIcon className="absolute -right-2 -bottom-2 size-16 text-zinc-400/10 rotate-12 group-hover:scale-110 transition-transform" />
-        <Stack gap={2} className="relative z-10 w-full h-full">
-          <Group gap={6} className="shrink-0">
-            <ClockIcon className="size-4 text-zinc-500" />
-            <Text
-              size="xs"
-              c="zinc.5"
-              fw={800}
-              className="uppercase tracking-widest"
-            >
-              Fecha Requerida
-            </Text>
-          </Group>
-          <div className="flex-1 flex items-center min-h-6">
-            <Text
-              size="md"
-              fw={800}
-              className="text-zinc-100 tracking-tight leading-tight font-mono"
-            >
-              {requerimiento.fecha_entrega_requerida
-                ? dayjs(requerimiento.fecha_entrega_requerida).format(
-                    "DD/MM/YYYY",
-                  )
-                : "No especificada"}
-            </Text>
-          </div>
-        </Stack>
-      </Paper>
+      <HeaderCard
+        icon={CalendarDaysIcon}
+        label="Fecha Solicitud"
+        value={
+          requerimiento.fecha_solicitud
+            ? dayjs(requerimiento.fecha_solicitud).format("DD/MM/YYYY")
+            : "No especificada"
+        }
+        color="zinc"
+      />
 
       <Paper
         p="md"

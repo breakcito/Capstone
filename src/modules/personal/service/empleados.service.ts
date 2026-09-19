@@ -1,5 +1,5 @@
 import { api } from "../../../service/_api";
-import type { RES_Labor } from "../../../service/responses/labor";
+type RES_Labor = any;
 import type { RES_Banco } from "../../../service/responses/banco";
 import type { IRespuesta } from "../../../shared/interfaces/_response";
 import type {

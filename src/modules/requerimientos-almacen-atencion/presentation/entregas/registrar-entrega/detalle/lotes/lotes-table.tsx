@@ -2,9 +2,6 @@ import { Table } from "@mantine/core";
 import { LoteRow } from "./lote-row";
 import type { DetalleRequerimientoExtendido } from "../../../../../service/atencion.responses";
 import type { RES_LoteDisponible } from "../../../../../../../service/responses/lote-producto";
-import type { RES_ActivoFijoDisponible } from "../../../../../../../service/responses/activo-fijo";
-import type { RES_LoteMineral } from "../../../../../../../service/responses/lote-mineral";
-import type { DestinoItem } from "../../../../../hooks/useRegistrarEntrega";
 import { JsonScanner } from "../../../../../../../presentation/utils/json-scanner";
 import { useJsonScanner } from "../../../../../../../hooks/useJsonScanner";
 
@@ -15,19 +12,11 @@ interface LotesTableProps {
   tEntregadoDetalleActualBase: number;
   entregaCantidades: Record<number, Record<number, number>>;
   detalle_req: DetalleRequerimientoExtendido;
-  allActivos: RES_ActivoFijoDisponible[];
-  lotesMineral: RES_LoteMineral[];
-  destinosMap: Record<string, DestinoItem>;
   handleCantChange: (idDetalle: number, idLote: number, cant: number) => void;
   handleCantLoteChange: (
     idDetalle: number,
     idLote: number,
     cant: number,
-  ) => void;
-  handleDestinoChange: (
-    key: string,
-    field: string,
-    value: string | number | null,
   ) => void;
 }
 
@@ -38,12 +27,8 @@ export const LotesTable = ({
   tEntregadoDetalleActualBase,
   entregaCantidades,
   detalle_req,
-  allActivos,
-  lotesMineral,
-  destinosMap,
   handleCantChange,
   handleCantLoteChange,
-  handleDestinoChange,
 }: LotesTableProps) => {
   const { isFiltering, clearFilter, handleScanned, filterItems } =
     useJsonScanner();
@@ -73,14 +58,13 @@ export const LotesTable = ({
             <th className="text-center">Vencimiento</th>
             <th className="text-center">Stock Disponible</th>
             <th className="text-center">Cant. a Despachar</th>
-            <th className="text-center">Destino</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800/40">
           {lotesVisibles.length === 0 ? (
             <tr>
               <td
-                colSpan={5}
+                colSpan={4}
                 className="py-10 text-center text-zinc-600 italic text-sm font-medium"
               >
                 {isFiltering
@@ -92,15 +76,6 @@ export const LotesTable = ({
             lotesVisibles.map((lote) => {
               const cant = entregaCantidades[idDetalleReq]?.[lote.id_lote] || 0;
 
-              // Stock real disponible considerando lo asignado a otros detalles en este modal
-              // Suma total en todos los detalles de este modal
-              // const totalItemsTotal = Object.values(entregaCantidades).reduce(
-              //   (sum, lotesMap) => {
-              //     return sum + (lotesMap[lote.id_lote] || 0);
-              //   },
-              //   0,
-              // );
-
               // Stock restante global (lo que se muestra al usuario)
               const stockVisible = Math.max(0, lote.stock_actual_base || 0);
 
@@ -109,7 +84,9 @@ export const LotesTable = ({
                 stockVisible + cant,
                 pendienteBase - (tEntregadoDetalleActualBase - cant),
               );
-              const maxLote = maxBase / (lote.contenido_por_presentacion || 1);
+
+              const maxLote =
+                detalle_req.equivReq > 0 ? maxBase / detalle_req.equivReq : 0;
 
               return (
                 <LoteRow
@@ -121,12 +98,8 @@ export const LotesTable = ({
                   maxLote={maxLote}
                   detalle_req={detalle_req}
                   stockVisible={stockVisible}
-                  allActivos={allActivos}
-                  lotesMineral={lotesMineral}
-                  destinosMap={destinosMap}
                   handleCantChange={handleCantChange}
                   handleCantLoteChange={handleCantLoteChange}
-                  handleDestinoChange={handleDestinoChange}
                 />
               );
             })

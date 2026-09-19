@@ -34,7 +34,10 @@ export const useKardex = () => {
     setError("");
     try {
       const res = await AuxService.get_almacenes({
-        id_empleado_responsable: useAuthStore.getState().usuario?.id_empleado,
+        id_empleado_responsable:
+          useAuthStore.getState().usuario?.id_rol == 1
+            ? useAuthStore.getState().usuario?.id_empleado
+            : undefined,
       });
       if (res.success) {
         setAlmacenes(res.data);
@@ -126,7 +129,8 @@ export const useKardex = () => {
       if (en_modo_auditable && m.es_auditable) return false;
 
       const matchProducto = !filtroProducto || m.producto === filtroProducto;
-      const matchLote = !filtroLote || String(m.correlativo_lote) === filtroLote;
+      const matchLote =
+        !filtroLote || String(m.correlativo_lote) === filtroLote;
 
       const q = busqueda.toLowerCase().trim();
       const matchBusqueda =
@@ -140,7 +144,9 @@ export const useKardex = () => {
     });
 
     // Ordenar de más reciente a más antiguo por fecha
-    return filtered.sort((a, b) => dayjs(b.created_at).valueOf() - dayjs(a.created_at).valueOf());
+    return filtered.sort(
+      (a, b) => dayjs(b.created_at).valueOf() - dayjs(a.created_at).valueOf(),
+    );
   }, [movimientos, busqueda, filtroProducto, filtroLote, en_modo_auditable]);
 
   return {

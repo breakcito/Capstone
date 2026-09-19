@@ -5,10 +5,6 @@ import type { DetalleRequerimientoExtendido } from "../../../../service/atencion
 import type { RES_LoteDisponible } from "../../../../../../service/responses/lote-producto";
 import { GroupByDetalleRequerimiento } from "./group-by-detalle-req";
 
-import type { RES_ActivoFijoDisponible } from "../../../../../../service/responses/activo-fijo";
-import type { RES_LoteMineral } from "../../../../../../service/responses/lote-mineral";
-import type { DestinoItem } from "../../../../hooks/useRegistrarEntrega";
-
 interface GroupByProductoProps {
   idProducto: number;
   group: {
@@ -19,24 +15,24 @@ interface GroupByProductoProps {
     details: DetalleRequerimientoExtendido[];
   };
   lotesPorProducto: Record<number, RES_LoteDisponible[]>;
-  activosFijosPorProducto: Record<number, RES_ActivoFijoDisponible[]>;
+  activosFijosPorProducto?: Record<number, unknown[]>;
   entregaCantidades: Record<number, Record<number, number>>;
-  entregaCantidadesActivos: Record<number, Record<number, number>>;
-  allActivos: RES_ActivoFijoDisponible[];
-  lotesMineral: RES_LoteMineral[];
-  destinosMap: Record<string, DestinoItem>;
+  entregaCantidadesActivos?: Record<number, Record<number, number>>;
+  allActivos?: unknown[];
+  lotesMineral?: unknown[];
+  destinosMap?: unknown;
   handleCantChange: (idDetalle: number, idLote: number, cant: number) => void;
   handleCantLoteChange: (
     idDetalle: number,
     idLote: number,
     cant: number,
   ) => void;
-  handleCantActivoChange: (
+  handleCantActivoChange?: (
     idDetalle: number,
     idActivo: number,
     cant: number,
   ) => void;
-  handleDestinoChange: (
+  handleDestinoChange?: (
     key: string,
     field: string,
     value: string | number | null,
@@ -47,19 +43,11 @@ export const GroupByProducto = ({
   idProducto,
   group,
   lotesPorProducto,
-  activosFijosPorProducto,
   entregaCantidades,
-  entregaCantidadesActivos,
-  allActivos,
-  lotesMineral,
-  destinosMap,
   handleCantChange,
   handleCantLoteChange,
-  handleCantActivoChange,
-  handleDestinoChange,
 }: GroupByProductoProps) => {
   const lotes = lotesPorProducto[idProducto] || [];
-  const activosFijos = activosFijosPorProducto[idProducto] || [];
 
   return (
     <Paper
@@ -112,17 +100,10 @@ export const GroupByProducto = ({
             key={detalle_req.id_requerimiento_almacen_detalle}
             detalle_req={detalle_req}
             lotes={lotes}
-            activosFijos={activosFijos}
             index={index}
             entregaCantidades={entregaCantidades}
-            entregaCantidadesActivos={entregaCantidadesActivos}
-            allActivos={allActivos}
-            lotesMineral={lotesMineral}
-            destinosMap={destinosMap}
             handleCantChange={handleCantChange}
             handleCantLoteChange={handleCantLoteChange}
-            handleCantActivoChange={handleCantActivoChange}
-            handleDestinoChange={handleDestinoChange}
           />
         ))}
       </Stack>

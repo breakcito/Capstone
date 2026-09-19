@@ -11,13 +11,15 @@ import type { RES_ProductoResumen } from "../service/productos.responses";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
 import { Moneda } from "../../../shared/enums/_generic/moneda";
 import type { RES_UnidadMedida } from "../../../service/responses/unidad-medida";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import {
   getCoincidencias,
   type SearchResult,
 } from "../../../shared/functions/get-coincidencias";
 import { AuxService } from "../../../service/auxiliar.service";
-import type { RES_Categoria } from "../../../service/responses/categoria";
+export interface RES_Categoria {
+  id_categoria: number;
+  nombre: string;
+}
 
 const INITIAL_FORM: DTO_CrearProducto = {
   id_categoria: 0,
@@ -79,15 +81,8 @@ export const useRegistroProducto = ({
   >([]);
 
   const cargarCategorias = useCallback(async () => {
-    setLoadingCategorias(true);
-    try {
-      const resp = await AuxService.get_categorias();
-      if (resp.success) setCategorias(resp.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingCategorias(false);
-    }
+    setLoadingCategorias(false);
+    setCategorias([]);
   }, []);
 
   const cargarUnidades = useCallback(async () => {
@@ -128,20 +123,6 @@ export const useRegistroProducto = ({
         newForm.tiempo_espera_vencimiento = 1;
       }
 
-      // Si cambia la categoría, verificar si es auditable
-      if (field === "id_categoria") {
-        const cat = categorias.find((c) => c.id_categoria === value);
-        if (cat) {
-          newForm.es_auditable = !!cat.es_auditable;
-
-          // Si es Activo Fijo, la unidad de medida base es "Unidad" (ID 7)
-          if (cat.clasificacion_bien === TipoBien.ActivoFijo) {
-            newForm.id_unidad_medida_base = 7;
-            newForm.stock_minimo_base = 0;
-            newForm.es_perecible = false;
-          }
-        }
-      }
 
       return newForm;
     });

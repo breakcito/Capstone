@@ -407,26 +407,26 @@ export const RegistroLote = ({
           productosExistentes={catalogs.productos.map((p) => ({
             id_producto: p.id_producto,
             nombre: p.nombre,
-            prefijo: p.prefijo,
-            id_categoria: p.id_categoria,
-            categoria: p.categoria,
-            clasificacion_bien: p.tipo_bien,
+            prefijo: p.prefijo ?? null,
+            id_categoria: p.id_categoria ?? null,
+            categoria: p.categoria ?? null,
+            clasificacion_bien: "Producto" as any,
             id_unidad_medida_base: p.id_unidad_medida_base,
             unidad_medida_base: p.unidad_medida_base,
             unidad_medida_base_abreviatura: p.unidad_medida_base_abv,
-            es_auditable: p.es_auditable,
+            es_auditable: !!p.es_auditable,
             es_perecible: p.es_perecible,
-            para_mantenimiento: p.para_mantenimiento,
+            para_mantenimiento: !!p.para_mantenimiento,
             stock_minimo_base: p.stock_minimo_base,
-            moneda: p.moneda,
-            costo_promedio_base: p.costo_promedio_base,
+            moneda: p.moneda ?? null,
+            costo_promedio_base: p.costo_promedio_base ?? null,
             costo_promedio_base_log: null,
             tiempo_espera_vencimiento: null,
             periodo_espera_vencimiento: null,
             dias_espera_vencimiento: p.dias_espera_vencimiento,
             estado: EstadoBase.Activo,
             cambios_log: null,
-          }))}
+          })) as any}
           onSuccess={(nuevo) => {
             recargarProductos();
             setIdProducto(nuevo.id_producto);

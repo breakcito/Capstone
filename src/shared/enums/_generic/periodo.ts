@@ -1,7 +1,10 @@
 export enum Periodo {
-  Diario = "diario",
-  Semanal = "semanal",
-  Mensual = "mensual",
-  Anual = "anual",
-  Ninguno = "ninguno",
+  Diario = "Diario",
+  Semanal = "Semanal",
+  Mensual = "Mensual",
+  Anual = "Anual",
+  Ninguno = "Ninguno",
+  Dias = "Días",
+  Meses = "Meses",
+  Anos = "Años",
 }

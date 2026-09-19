@@ -14,13 +14,13 @@ import {
 import { IconDeviceFloppy, IconExclamationCircle } from "@tabler/icons-react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { ModalEstandar } from "./modal-estandar";
-import { FormCategoria } from "./form-categoria";
 import { FormUnidadMedida } from "./form-unidad-medida";
 import { AuxService } from "../../service/auxiliar.service";
 import type { RES_Producto } from "../../service/responses/producto";
 import type { RES_UnidadMedida } from "../../service/responses/unidad-medida";
 import { useNotify } from "../../hooks/useNotify";
-import type { RES_Categoria } from "../../service/responses/categoria";
+import { TipoProducto } from "../../shared/enums/_generic/tipo-producto";
+import { Periodo } from "../../shared/enums/_generic/periodo";
 
 export interface FormProductoProps {
   onSuccess: (producto: RES_Producto) => void;
@@ -32,22 +32,9 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
   const [loading, setLoading] = useState(false);
   const [loadingMaestros, setLoadingMaestros] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [openedAddCat, setOpenedAddCat] = useState(false);
   const [openedAddUnidad, setOpenedAddUnidad] = useState(false);
 
   // Maestros
-  const [categorias, setCategorias] = useState<RES_Categoria[]>([]);
-
-  const fetchCategorias = async () => {
-    try {
-      const resCat = await AuxService.get_categorias();
-      if (resCat.success) {
-        setCategorias(resCat.data);
-      }
-    } catch (err) {
-      console.error("Error al refrescar categorias", err);
-    }
-  };
   const [unidades, setUnidades] = useState<RES_UnidadMedida[]>([]);
 
   const fetchUnidades = async () => {
@@ -62,41 +49,22 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
   };
 
   // Form Fields
-  const [idCategoria, setIdCategoria] = useState<string | null>(null);
-  const [idUnidadMedidaBase, setIdUnidadMedidaBase] = useState<string | null>(
-    null,
-  );
   const [nombre, setNombre] = useState("");
-  const [prefijo, setPrefijo] = useState("");
-  const [esAuditable, setEsAuditable] = useState(false);
-  const [paraMantenimiento, setParaMantenimiento] = useState(false);
+  const [tipoProducto, setTipoProducto] = useState<string | null>(TipoProducto.Herramientas);
+  const [idUnidadMedidaBase, setIdUnidadMedidaBase] = useState<string | null>(null);
   const [esPerecible, setEsPerecible] = useState(false);
-
-  // Condicionales por perecibilidad
-  const [tiempoEsperaVencimiento, setTiempoEsperaVencimiento] = useState<
-    number | string
-  >("");
-  const [periodoEsperaVencimiento, setPeriodoEsperaVencimiento] = useState<
-    string | null
-  >(null);
-
-  // Opcionales
   const [stockMinimoBase, setStockMinimoBase] = useState<number | string>("");
-  const [costoPromedioBase, setCostoPromedioBase] = useState<number | string>(
-    "",
-  );
+  const [tiempoEsperaVencimiento, setTiempoEsperaVencimiento] = useState<number | string>("");
+  const [periodoEsperaVencimiento, setPeriodoEsperaVencimiento] = useState<string | null>(Periodo.Dias);
 
   useEffect(() => {
     const fetchMaestros = async () => {
       try {
         setLoadingMaestros(true);
-        await Promise.all([fetchCategorias(), fetchUnidades()]);
+        await fetchUnidades();
       } catch (err) {
-        console.error(
-          "Error al cargar maestros para el formulario de producto",
-          err,
-        );
-        setError("Error al cargar categorías y unidades de medida.");
+        console.error("Error al cargar maestros para el formulario de producto", err);
+        setError("Error al cargar unidades de medida.");
       } finally {
         setLoadingMaestros(false);
       }
@@ -105,12 +73,10 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
   }, []);
 
   const validate = () => {
-    if (!idCategoria) return "La categoría es requerida";
-    if (!idUnidadMedidaBase) return "La unidad de medida es requerida";
     if (!nombre.trim()) return "El nombre es requerido";
-    if (nombre.trim().length < 3) return "El nombre del producto es muy corto";
-    if (prefijo && prefijo.length > 100)
-      return "El prefijo no puede tener más de 100 caracteres";
+    if (nombre.trim().length < 2) return "El nombre del producto es muy corto";
+    if (!tipoProducto) return "El tipo de producto es requerido";
+    if (!idUnidadMedidaBase) return "La unidad de medida es requerida";
     if (esPerecible) {
       if (!tiempoEsperaVencimiento || Number(tiempoEsperaVencimiento) <= 0) {
         return "Debe indicar un tiempo de espera válido para productos perecibles";
@@ -135,17 +101,11 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
     setLoading(true);
     try {
       const res = await AuxService.crear_producto({
-        id_categoria: Number(idCategoria),
-        id_unidad_medida_base: Number(idUnidadMedidaBase),
         nombre: nombre.trim(),
-        prefijo: prefijo.trim() || undefined,
-        es_auditable: esAuditable,
+        tipo_producto: tipoProducto as TipoProducto,
+        id_unidad_medida_base: Number(idUnidadMedidaBase),
         es_perecible: esPerecible,
-        para_mantenimiento: paraMantenimiento,
-        stock_minimo_base:
-          stockMinimoBase !== "" ? Number(stockMinimoBase) : undefined,
-        costo_promedio_base:
-          costoPromedioBase !== "" ? Number(costoPromedioBase) : undefined,
+        stock_minimo_base: stockMinimoBase !== "" ? Number(stockMinimoBase) : undefined,
         tiempo_espera_vencimiento:
           esPerecible && tiempoEsperaVencimiento !== ""
             ? Number(tiempoEsperaVencimiento)
@@ -183,7 +143,7 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
       <Group justify="center" py="xl">
         <Loader size="sm" color="indigo" />
         <span className="text-zinc-400 text-xs font-medium">
-          Cargando categorías y unidades...
+          Cargando unidades...
         </span>
       </Group>
     );
@@ -201,47 +161,46 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
         </Alert>
       )}
 
-      <Grid>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <div className="flex gap-2 items-end">
-            <Select
-              label="Categoría"
-              placeholder="Seleccione"
-              searchable
-              withAsterisk
-              radius="xl"
-              data={categorias.map((c) => ({
-                value: String(c.id_categoria),
-                label: c.nombre,
-              }))}
-              value={idCategoria}
-              onChange={(val) => {
-                setIdCategoria(val);
-                if (error) setError(null);
-              }}
-              classNames={inputClasses}
-              className="flex-1"
-            />
-            <ActionIcon
-              size={"lg"}
-              radius="xl"
-              variant="filled"
-              color="indigo"
-              className="shrink-0 bg-indigo-600 hover:bg-indigo-700 transition-colors mb-px h-9.5 w-9.5"
-              onClick={() => setOpenedAddCat(true)}
-            >
-              <PlusIcon className="w-5 h-5 text-white" />
-            </ActionIcon>
-          </div>
+      <Grid gutter="md">
+        <Grid.Col span={12}>
+          <TextInput
+            label="Nombre del Producto"
+            placeholder="Ej. Guantes de Cuero, Taladro de Impacto..."
+            required
+            value={nombre}
+            onChange={(e) => {
+              setNombre(e.currentTarget.value);
+              if (error) setError(null);
+            }}
+            classNames={inputClasses}
+          />
         </Grid.Col>
+
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <div className="flex gap-2 items-end">
+          <Select
+            label="Tipo de Producto"
+            placeholder="Seleccione un tipo"
+            required
+            data={Object.values(TipoProducto).map((tipo) => ({
+              value: tipo,
+              label: tipo,
+            }))}
+            value={tipoProducto}
+            onChange={(val) => {
+              setTipoProducto(val);
+              if (error) setError(null);
+            }}
+            classNames={inputClasses}
+          />
+        </Grid.Col>
+
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <div className="flex items-end gap-2">
             <Select
               label="Unidad de Medida Base"
-              placeholder="Seleccione"
-              searchable
-              withAsterisk
-              radius="xl"
+              placeholder="Seleccione la unidad"
+              required
+              className="flex-1"
               data={unidades.map((u) => ({
                 value: String(u.id_unidad_medida),
                 label: `${u.nombre} (${u.abreviatura})`,
@@ -251,99 +210,46 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
                 setIdUnidadMedidaBase(val);
                 if (error) setError(null);
               }}
+              searchable
               classNames={inputClasses}
-              className="flex-1"
             />
             <ActionIcon
-              size={"lg"}
-              radius="xl"
-              variant="filled"
+              size="lg"
+              variant="light"
               color="indigo"
-              className="shrink-0 bg-indigo-600 hover:bg-indigo-700 transition-colors mb-px h-9.5 w-9.5"
               onClick={() => setOpenedAddUnidad(true)}
+              className="mb-[1px]"
+              title="Nueva Unidad de Medida"
             >
-              <PlusIcon className="w-5 h-5 text-white" />
+              <PlusIcon className="w-5 h-5" />
             </ActionIcon>
           </div>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 8 }}>
-          <TextInput
-            label="Nombre del Producto"
-            placeholder="Ej. Grasa Multipropósito NLGI 2"
-            radius="xl"
-            withAsterisk
-            value={nombre}
-            onChange={(e) => {
-              setNombre(e.target.value);
-              if (error) setError(null);
-            }}
-            classNames={inputClasses}
-          />
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <TextInput
-            label="Prefijo (opc)"
-            placeholder="Ej. GRA"
-            radius="xl"
-            maxLength={100}
-            value={prefijo}
-            onChange={(e) => {
-              setPrefijo(
-                e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
-              );
-              if (error) setError(null);
-            }}
-            classNames={inputClasses}
-          />
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>
           <NumberInput
-            label="Stock Mínimo Base (opc)"
+            label="Stock Mínimo Base"
             placeholder="0"
-            radius="xl"
             min={0}
-            decimalScale={2}
-            allowNegative={false}
             value={stockMinimoBase}
             onChange={(val) => setStockMinimoBase(val)}
             classNames={inputClasses}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <NumberInput
-            label="Costo Promedio Inicial (opc)"
-            placeholder="0.00"
-            radius="xl"
-            min={0}
-            decimalScale={4}
-            allowNegative={false}
-            value={costoPromedioBase}
-            onChange={(val) => setCostoPromedioBase(val)}
-            classNames={inputClasses}
-          />
-        </Grid.Col>
 
-        <Grid.Col span={{ base: 12 }}>
-          <div className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between">
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <div className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between mt-5">
             <div className="flex flex-col gap-0.5">
               <span className="text-zinc-300 font-medium text-sm">
                 ¿Es perecible?
               </span>
               <span className="text-zinc-500 text-xs">
-                Activar si el producto tiene fecha de caducidad.
+                Indica si vence con el tiempo.
               </span>
             </div>
             <Switch
               checked={esPerecible}
-              onChange={(e) => {
-                setEsPerecible(e.currentTarget.checked);
-                if (!e.currentTarget.checked) {
-                  setTiempoEsperaVencimiento("");
-                  setPeriodoEsperaVencimiento(null);
-                }
-                if (error) setError(null);
-              }}
+              onChange={(e) => setEsPerecible(e.currentTarget.checked)}
               color="indigo"
               size="md"
               className="cursor-pointer"
@@ -355,13 +261,10 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
           <>
             <Grid.Col span={{ base: 12, md: 6 }}>
               <NumberInput
-                label="Tiempo de Alerta Vencimiento"
-                placeholder="Ej. 3"
-                withAsterisk
-                radius="xl"
+                label="Tiempo de Espera de Vencimiento"
+                placeholder="Ej. 15"
+                required
                 min={1}
-                allowDecimal={false}
-                allowNegative={false}
                 value={tiempoEsperaVencimiento}
                 onChange={(val) => {
                   setTiempoEsperaVencimiento(val);
@@ -370,17 +273,17 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
                 classNames={inputClasses}
               />
             </Grid.Col>
+
             <Grid.Col span={{ base: 12, md: 6 }}>
               <Select
-                label="Periodo de Alerta"
-                placeholder="Seleccione"
-                withAsterisk
-                radius="xl"
+                label="Periodo de Espera"
+                placeholder="Seleccione el periodo"
+                required
                 data={[
-                  { value: "diario", label: "Día(s)" },
-                  { value: "semanal", label: "Semana(s)" },
-                  { value: "mensual", label: "Mes(es)" },
-                  { value: "anual", label: "Año(s)" },
+                  { value: Periodo.Dias, label: "Día(s)" },
+                  { value: Periodo.Semanal, label: "Semana(s)" },
+                  { value: Periodo.Meses, label: "Mes(es)" },
+                  { value: Periodo.Anos, label: "Año(s)" },
                 ]}
                 value={periodoEsperaVencimiento}
                 onChange={(val) => {
@@ -392,46 +295,6 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
             </Grid.Col>
           </>
         )}
-
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <div className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-zinc-300 font-medium text-sm">
-                ¿Es auditable?
-              </span>
-              <span className="text-zinc-500 text-xs">
-                Indica si se somete a inventarios rutinarios.
-              </span>
-            </div>
-            <Switch
-              checked={esAuditable}
-              onChange={(e) => setEsAuditable(e.currentTarget.checked)}
-              color="indigo"
-              size="md"
-              className="cursor-pointer"
-            />
-          </div>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <div className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-zinc-300 font-medium text-sm">
-                ¿Es para mantenimiento?
-              </span>
-              <span className="text-zinc-500 text-xs">
-                Indica si se usa en trabajos de mantenimiento.
-              </span>
-            </div>
-            <Switch
-              checked={paraMantenimiento}
-              onChange={(e) => setParaMantenimiento(e.currentTarget.checked)}
-              color="indigo"
-              size="md"
-              className="cursor-pointer"
-            />
-          </div>
-        </Grid.Col>
       </Grid>
 
       <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-zinc-800">
@@ -456,23 +319,6 @@ export const FormProducto = ({ onSuccess, onCancel }: FormProductoProps) => {
           Guardar Producto
         </Button>
       </div>
-
-      <ModalEstandar
-        opened={openedAddCat}
-        close={() => setOpenedAddCat(false)}
-        title="Nueva Categoría"
-        size="md"
-        zIndex={1001}
-      >
-        <FormCategoria
-          onSuccess={async (nuevaCat) => {
-            setOpenedAddCat(false);
-            await fetchCategorias();
-            setIdCategoria(String(nuevaCat.id_categoria));
-          }}
-          onCancel={() => setOpenedAddCat(false)}
-        />
-      </ModalEstandar>
 
       <ModalEstandar
         opened={openedAddUnidad}

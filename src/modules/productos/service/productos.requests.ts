@@ -3,7 +3,7 @@ import { Moneda } from "../../../shared/enums/_generic/moneda";
 
 export const Schema_CrearProducto = z
   .object({
-    id_categoria: z.number().min(1, "Debe seleccionar una categoría"),
+    id_categoria: z.number().optional().nullable(),
     id_unidad_medida_base: z
       .number()
       .min(1, "Debe seleccionar una unidad de medida"),
@@ -12,12 +12,12 @@ export const Schema_CrearProducto = z
       .min(1, "El nombre es requerido")
       .max(128, "Máximo 128 caracteres"),
     prefijo: z.string().max(100, "Máximo 100 caracteres").optional().nullable(),
-    es_auditable: z.boolean(),
+    es_auditable: z.boolean().optional(),
     es_perecible: z.boolean(),
-    para_mantenimiento: z.boolean(),
+    para_mantenimiento: z.boolean().optional(),
     stock_minimo_base: z.number().min(0, "Mínimo 0"),
-    moneda: z.nativeEnum(Moneda, "Debe indicar la moneda del costo"),
-    costo_promedio_base: z.number().min(0, "Mínimo 0"),
+    moneda: z.nativeEnum(Moneda).optional().nullable(),
+    costo_promedio_base: z.number().optional().nullable(),
     tiempo_espera_vencimiento: z.number().nullable().optional(),
     periodo_espera_vencimiento: z.string().nullable().optional(),
   })
@@ -43,7 +43,7 @@ export type DTO_CrearProducto = z.infer<typeof Schema_CrearProducto>;
 
 export const Schema_ActualizarProducto = z
   .object({
-    id_categoria: z.number().min(1, "Debe seleccionar una categoría"),
+    id_categoria: z.number().optional().nullable(),
     id_unidad_medida_base: z
       .number()
       .min(1, "Debe seleccionar una unidad de medida"),
@@ -52,12 +52,12 @@ export const Schema_ActualizarProducto = z
       .min(1, "El nombre es requerido")
       .max(128, "Máximo 128 caracteres"),
     prefijo: z.string().max(100, "Máximo 100 caracteres").optional().nullable(),
-    es_auditable: z.boolean(),
+    es_auditable: z.boolean().optional(),
     es_perecible: z.boolean(),
-    para_mantenimiento: z.boolean(),
+    para_mantenimiento: z.boolean().optional(),
     stock_minimo_base: z.number().min(0, "Mínimo 0"),
-    moneda: z.nativeEnum(Moneda, "Debe indicar la moneda del costo"),
-    costo_promedio_base: z.number().min(0, "Mínimo 0"),
+    moneda: z.nativeEnum(Moneda).optional().nullable(),
+    costo_promedio_base: z.number().optional().nullable(),
     tiempo_espera_vencimiento: z.number().nullable().optional(),
     periodo_espera_vencimiento: z.string().nullable().optional(),
   })

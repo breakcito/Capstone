@@ -6,7 +6,6 @@ import {
 import { ModalEstandar } from "../../../../../presentation/utils/modal-estandar";
 import { ReqDetalleTrazabilidad } from "./../detalle/detalle-log";
 import { HistorialEntregasRequerimiento } from "../../entregas/historial-entregas";
-import { RegistrarSolicitudLogistica } from "../../solicitud-reabastecimiento/registrar-solicitud-logistica";
 import { Estado_RequerimientoDetalle } from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
 import type { RES_RequerimientoAlmacen } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import type { DetalleRequerimientoExtendido } from "../../../service/atencion.responses";
@@ -31,10 +30,9 @@ interface InfoActionModalsProps {
   closeAprobar: () => void;
   handleAprobar: () => void;
   requerimiento: RES_RequerimientoAlmacen;
-  detalles: DetalleRequerimientoExtendido[];
+  detalles?: DetalleRequerimientoExtendido[];
   openedHistorialGlobal: boolean;
   closeHistorialGlobal: () => void;
-  logistica: { opened: boolean; close: () => void; onSuccess: () => void };
 }
 
 export const InfoActionModals = ({
@@ -56,10 +54,8 @@ export const InfoActionModals = ({
   closeAprobar,
   handleAprobar,
   requerimiento,
-  detalles,
   openedHistorialGlobal,
   closeHistorialGlobal,
-  logistica,
 }: InfoActionModalsProps) => {
   return (
     <>
@@ -179,20 +175,6 @@ export const InfoActionModals = ({
       >
         <HistorialEntregasRequerimiento
           idRequerimiento={requerimiento.id_requerimiento}
-        />
-      </ModalEstandar>
-
-      <ModalEstandar
-        opened={logistica.opened}
-        close={logistica.close}
-        title="Consultar con Logística"
-        size="90%"
-      >
-        <RegistrarSolicitudLogistica
-          requerimiento={requerimiento}
-          detalles={detalles}
-          onCancel={logistica.close}
-          onSuccess={logistica.onSuccess}
         />
       </ModalEstandar>
     </>

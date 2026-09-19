@@ -116,9 +116,9 @@ export const HistorialEntregasRequerimiento = ({
                       <Badge
                         variant="light"
                         color={
-                          h.estado === Estado_EntregaRequerimiento.ConsumoTotal
+                          h.estado === Estado_EntregaRequerimiento.Entregado
                             ? "teal"
-                            : "violet"
+                            : "red"
                         }
                         radius="sm"
                         className="font-bold"

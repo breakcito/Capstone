@@ -16,8 +16,8 @@ import type {
 } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import { AuxService } from "../../../service/auxiliar.service";
 import type { RES_Producto } from "../../../service/responses/producto";
-import type { RES_ActivoFijoDisponible } from "../../../service/responses/activo-fijo";
-import type { RES_Labor } from "../../../service/responses/labor";
+type RES_ActivoFijoDisponible = any;
+type RES_Labor = any;
 import type { RES_Empleado } from "../../../service/responses/empleado";
 import type { RES_Contratista } from "../../../service/responses/contratista";
 import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
@@ -30,6 +30,7 @@ import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
 export interface DetalleFormItem extends DTO_CrearRequerimientoDetalle {
   id_detalle?: number;
   bloqueado?: boolean;
+  para_mantenimiento?: boolean;
 }
 
 export type ModoRequerimiento = "crear" | "editar";
@@ -69,10 +70,10 @@ export const useRegistroRequerimiento = ({
   const [empleados, setEmpleados] = useState<RES_Empleado[]>([]);
   const [contratistas, setContratistas] = useState<RES_Contratista[]>([]);
   const [verContratistas, setVerContratistas] = useState(true);
-  const [labores, setLabores] = useState<RES_Labor[]>([]);
+  const [labores] = useState<RES_Labor[]>([]);
   const [productos, setProductos] = useState<RES_Producto[]>([]);
   const [unidades, setUnidades] = useState<RES_UnidadMedida[]>([]);
-  const [activos, setActivos] = useState<RES_ActivoFijoDisponible[]>([]);
+  const [activos] = useState<RES_ActivoFijoDisponible[]>([]);
   const [evidencias, setEvidencias] = useState<File[]>([]);
 
   // Estado Formulario Cabecera
@@ -137,24 +138,24 @@ export const useRegistroRequerimiento = ({
     if (modo !== "editar" || !requerimientoInicial) return;
 
     setIdAlmacenDestino(requerimientoInicial.id_almacen_destino);
-    setIdLabor(requerimientoInicial.id_labor ?? 0);
+    setIdLabor((requerimientoInicial as any).id_labor ?? 0);
     setIdEmpleadoSolicitante(
       requerimientoInicial.id_contratista_solicitante ??
-        requerimientoInicial.id_empleado_solicitante ??
+        (requerimientoInicial as any).id_empleado_solicitante ??
         0,
     );
     setVerContratistas(
       Boolean(requerimientoInicial.id_contratista_solicitante),
     );
-    setPremura((requerimientoInicial.premura as Premura) ?? Premura.Normal);
+    setPremura(((requerimientoInicial as any).premura as Premura) ?? Premura.Normal);
     setFechaSolicitud(
       requerimientoInicial.fecha_solicitud
         ? dayjs(requerimientoInicial.fecha_solicitud).toDate()
         : null,
     );
     setFechaEntregaRequerida(
-      requerimientoInicial.fecha_entrega_requerida
-        ? dayjs(requerimientoInicial.fecha_entrega_requerida).toDate()
+      (requerimientoInicial as any).fecha_entrega_requerida
+        ? dayjs((requerimientoInicial as any).fecha_entrega_requerida).toDate()
         : null,
     );
     setFechaEntregaManual(true);
@@ -168,8 +169,7 @@ export const useRegistroRequerimiento = ({
           cantidad_solicitada: Number(d.cantidad_solicitada ?? 0),
           contenido_por_presentacion: Number(d.contenido_por_presentacion ?? 1),
           comentario: d.comentario ?? null,
-          para_mantenimiento: Boolean(d.para_mantenimiento),
-          id_activo_fijo_destino: d.id_activo_fijo_destino ?? null,
+          para_mantenimiento: Boolean((d as any).para_mantenimiento),
           con_magnitud: Number(d.con_magnitud ?? 0) === 1,
           cantidad_items: d.cantidad_items ?? undefined,
           valor_magnitud: d.valor_magnitud ?? undefined,
@@ -186,53 +186,30 @@ export const useRegistroRequerimiento = ({
     const loadCatalogs = async () => {
       setLoadingProductos(true);
       setLoadingUnidades(true);
-      setLoadingLabores(true);
-      setLoadingMinaData(true);
-      setLoadingActivos(true);
+      setLoadingLabores(false);
+      setLoadingMinaData(false);
+      setLoadingActivos(false);
       try {
-        const [resProd, resUnid, resEmp, resAct, resCont, resLab] = await Promise.all([
+        const [resProd, resUnid, resEmp, resCont] = await Promise.all([
           AuxService.get_productos(),
           AuxService.get_unidades_medida({ incluir_conversiones: true }),
           AuxService.get_empleados(),
-          AuxService.get_activos_disponibles(),
           AuxService.get_contratistas(),
-          AuxService.get_labores(),
         ]);
 
         if (resProd.success && resProd.data) setProductos(resProd.data);
         if (resUnid.success && resUnid.data) setUnidades(resUnid.data);
         if (resEmp.success && resEmp.data) setEmpleados(resEmp.data);
-        if (resAct.success && resAct.data) setActivos(resAct.data);
         if (resCont.success && resCont.data) setContratistas(resCont.data);
-        if (resLab.success && resLab.data) setLabores(resLab.data);
       } catch (err) {
         console.error("Error loading catalogs", err);
       } finally {
         setLoadingProductos(false);
         setLoadingUnidades(false);
-        setLoadingLabores(false);
-        setLoadingMinaData(false);
-        setLoadingActivos(false);
       }
     };
 
     loadCatalogs();
-  }, []);
-
-  // Cargar activos fijos disponibles
-  useEffect(() => {
-    const loadActivos = async () => {
-      setLoadingActivos(true);
-      try {
-        const res = await AuxService.get_activos_disponibles();
-        if (res.success && res.data) {
-          setActivos(res.data);
-        }
-      } finally {
-        setLoadingActivos(false);
-      }
-    };
-    loadActivos();
   }, []);
 
   // 4. Lógica de Unidades al elegir Producto/Unidad
@@ -441,7 +418,7 @@ export const useRegistroRequerimiento = ({
     const q = productoBusqueda.trim();
     if (!q) return productosFiltrados;
     return getCoincidencias(productosFiltrados, q, {
-      keys: ["nombre", "categoria"],
+      keys: ["nombre"],
       fuseThreshold: 0.4,
     }).map((r) => r.item);
   }, [productosFiltrados, productoBusqueda]);
@@ -520,17 +497,12 @@ export const useRegistroRequerimiento = ({
       ? conversionAutomatica ?? 1
       : contenido;
 
-    const nuevoItem: DTO_CrearRequerimientoDetalle = {
+    const nuevoItem: DetalleFormItem = {
       id_producto: idProducto,
       id_unidad_medida: idUnidadMedida,
       cantidad_solicitada: cantidadSolicitadaFinal,
       contenido_por_presentacion: contenidoPorPresentacionFinal,
       comentario: finalComentario,
-      para_mantenimiento: paraMantenimientoItem,
-      id_activo_fijo_destino:
-        paraMantenimientoItem && idActivoFijoDestino > 0
-          ? idActivoFijoDestino
-          : null,
     };
 
     if (usaMagnitud) {
@@ -750,11 +722,6 @@ export const useRegistroRequerimiento = ({
     setSubmitting(true);
     setError(null);
 
-    const esAuditable = detalles.some((d) => {
-      const prod = productos.find((p) => p.id_producto === d.id_producto);
-      return prod?.es_auditable;
-    });
-
     // ============== MODO EDICIÓN ==============
     if (modo === "editar") {
       if (!requerimientoInicial) {
@@ -783,11 +750,6 @@ export const useRegistroRequerimiento = ({
           cantidad_solicitada: d.cantidad_solicitada,
           contenido_por_presentacion: d.contenido_por_presentacion,
           comentario: d.comentario,
-          para_mantenimiento: d.para_mantenimiento,
-          id_activo_fijo_destino:
-            d.id_activo_fijo_destino && d.id_activo_fijo_destino > 0
-              ? d.id_activo_fijo_destino
-              : null,
           con_magnitud: d.con_magnitud,
           cantidad_items: d.cantidad_items,
           valor_magnitud: d.valor_magnitud,
@@ -802,11 +764,6 @@ export const useRegistroRequerimiento = ({
           cantidad_solicitada: d.cantidad_solicitada,
           contenido_por_presentacion: d.contenido_por_presentacion,
           comentario: d.comentario,
-          id_activo_fijo_destino:
-            d.id_activo_fijo_destino && d.id_activo_fijo_destino > 0
-              ? d.id_activo_fijo_destino
-              : null,
-          para_mantenimiento: d.para_mantenimiento,
           con_magnitud: d.con_magnitud ? 1 : 0,
           cantidad_items: d.cantidad_items,
           valor_magnitud: d.valor_magnitud,
@@ -832,24 +789,12 @@ export const useRegistroRequerimiento = ({
         const res = await AtencionService.editarRequerimiento(
           requerimientoInicial.id_requerimiento,
           {
-            id_empleado_solicitante:
-              !verContratistas && idEmpleadoSolicitante > 0
-                ? idEmpleadoSolicitante
-                : null,
             id_contratista_solicitante:
-              verContratistas && idEmpleadoSolicitante > 0
-                ? idEmpleadoSolicitante
-                : null,
-            id_labor: idLabor > 0 ? idLabor : null,
-            premura,
+              idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
             fecha_solicitud: fechaSolicitud
               ? dayjs(fechaSolicitud).format("YYYY-MM-DD")
               : undefined,
-            fecha_entrega_requerida: fechaEntregaRequerida
-              ? dayjs(fechaEntregaRequerida).format("YYYY-MM-DD")
-              : undefined,
             observacion,
-            es_auditable: esAuditable,
             evidencias_nuevas:
               evidencias.length > 0 ? evidencias : undefined,
             detalles_editar,
@@ -880,22 +825,24 @@ export const useRegistroRequerimiento = ({
 
     // ============== MODO CREAR ==============
     const dto: DTO_CrearRequerimiento = {
-      id_empleado_solicitante:
-        !verContratistas && idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
       id_contratista_solicitante:
-        verContratistas && idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
-      id_labor: idLabor > 0 ? idLabor : null,
+        idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
       id_almacen_destino: idAlmacenDestino,
-      premura,
-      es_auditable: esAuditable,
       fecha_solicitud: fechaSolicitud
         ? dayjs(fechaSolicitud).format("YYYY-MM-DD")
         : null,
-      fecha_entrega_requerida: fechaEntregaRequerida
-        ? dayjs(fechaEntregaRequerida).format("YYYY-MM-DD")
-        : dayjs().add(2, "days").format("YYYY-MM-DD"),
       observacion,
-      detalles,
+      detalles: detalles.map((d) => ({
+        id_producto: d.id_producto,
+        id_unidad_medida: d.id_unidad_medida,
+        cantidad_solicitada: d.cantidad_solicitada,
+        contenido_por_presentacion: d.contenido_por_presentacion,
+        comentario: d.comentario,
+        con_magnitud: d.con_magnitud,
+        cantidad_items: d.cantidad_items,
+        valor_magnitud: d.valor_magnitud,
+        valor_magnitud_base: d.valor_magnitud_base,
+      })),
       evidencias: evidencias.length > 0 ? evidencias : null,
     };
 

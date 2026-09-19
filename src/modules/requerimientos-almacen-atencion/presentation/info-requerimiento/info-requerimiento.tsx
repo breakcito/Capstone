@@ -64,7 +64,6 @@ export const InfoRequerimiento = ({
     isAllPendingSelected,
     seleccionarTodoLoPendiente,
     getStatusColor,
-    logistica,
     loadData,
     patchDetallesLocales,
   } = useGestionAtencion({
@@ -114,7 +113,6 @@ export const InfoRequerimiento = ({
         setSelectedItemId={setSelectedItemId}
         openAprobar={openAprobar}
         openRechazo={openRechazo}
-        logistica={logistica}
         isAllPendingSelected={isAllPendingSelected}
         seleccionarTodoLoPendiente={seleccionarTodoLoPendiente}
         getStatusColor={getStatusColor}
@@ -150,11 +148,6 @@ export const InfoRequerimiento = ({
         detalles={detalles}
         openedHistorialGlobal={openedHistorialGlobal}
         closeHistorialGlobal={closeHistorialGlobal}
-        logistica={{
-          opened: logistica.isOpen,
-          close: logistica.close,
-          onSuccess: logistica.onSuccess,
-        }}
       />
 
       <ModalEstandar
@@ -192,7 +185,6 @@ export const InfoRequerimiento = ({
             selectedItemsIds={selectedItemsIds}
             detallesRequerimiento={detalles}
             idContratistaSolicitante={requerimiento.id_contratista_solicitante}
-            idEmpleadoSolicitante={requerimiento.id_empleado_solicitante}
             onSuccess={(entregados) => {
               patchDetallesLocales(entregados);
               deselectAllItems();
