@@ -1,5 +1,5 @@
 import type { Premura } from "../../../shared/enums/_generic/premura";
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type {
   Estado_Solicitud,
   Estado_SolicitudDetalle,

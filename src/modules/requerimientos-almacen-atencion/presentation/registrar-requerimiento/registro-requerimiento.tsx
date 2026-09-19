@@ -30,7 +30,7 @@ import {
 import { useRegistroRequerimiento } from "../../hooks/useRegistroRequerimiento";
 import type { ModoRequerimiento } from "../../hooks/useRegistroRequerimiento";
 import { Premura } from "../../../../shared/enums/_generic/premura";
-import { TipoBien } from "../../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../../shared/enums/_generic/tipo-producto";
 import { CustomDatePicker } from "../../../../presentation/utils/date-picker-input";
 import { enPlural } from "../../../../shared/functions/en-plural";
 import { formatNumber } from "../../../../shared/functions/formatNumber";

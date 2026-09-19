@@ -6,7 +6,7 @@ export const getPrinterLoadingHtml = () => `
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Cargando Documento | BlackSilver</title>
+    <title>Cargando Documento | Cupper & Hannia</title>
     <style>
       body {
         background-color: #030303;
@@ -165,7 +165,7 @@ export const getPrinterLoadingHtml = () => `
 `;
 
 /**
- * Abre una ventana en blanco e inyecta la pantalla de carga de BlackSilver.
+ * Abre una ventana en blanco e inyecta la pantalla de carga de Capstone.
  * Esta función DEBE llamarse desde un evento de clic sincrónico para evitar el bloqueo del navegador.
  */
 export const preparePrinterWindow = (target: string) => {

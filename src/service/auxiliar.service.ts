@@ -9,7 +9,7 @@ import type { RES_LoteDisponible } from "./responses/lote-producto";
 import type { RES_Empleado } from "./responses/empleado";
 import type { RES_Empresa } from "./responses/empresa";
 import type { RES_Mina } from "./responses/mina";
-import type { TipoBien } from "../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../shared/enums/_generic/tipo-producto";
 import type { RES_Marca } from "./responses/marca";
 import type { RES_ActivoFijoDisponible } from "./responses/activo-fijo";
 import type { EstadoActivoFijo } from "../shared/enums/activo-fijo";

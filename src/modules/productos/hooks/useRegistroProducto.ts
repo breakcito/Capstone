@@ -11,7 +11,7 @@ import type { RES_ProductoResumen } from "../service/productos.responses";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
 import { Moneda } from "../../../shared/enums/_generic/moneda";
 import type { RES_UnidadMedida } from "../../../service/responses/unidad-medida";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import {
   getCoincidencias,
   type SearchResult,

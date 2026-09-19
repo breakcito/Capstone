@@ -3,7 +3,7 @@ import type {
   Estado_OCTransferenciaDetalle,
 } from "../../../shared/enums/orden-compra/orden-compra-transferencia";
 import type { IArchivo } from "../../../shared/interfaces/archivo";
-import type { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import type { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import type { MedioEntrega } from "../../../shared/enums/_generic/medio-entrega";
 
 export interface RES_OCTransferencia {

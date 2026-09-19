@@ -37,7 +37,7 @@ import type {
 import { formatNumber } from "../../../shared/functions/formatNumber";
 import { Moneda } from "../../../shared/enums/_generic/moneda";
 import { enPlural } from "../../../shared/functions/en-plural";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import { BotonRecargar } from "../../../presentation/utils/boton-recargar";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
@@ -114,9 +114,7 @@ export const ProductosPage = () => {
       });
     });
     // Más recientes primero
-    lista.sort(
-      (a, b) => dayjs(b.fecha).valueOf() - dayjs(a.fecha).valueOf(),
-    );
+    lista.sort((a, b) => dayjs(b.fecha).valueOf() - dayjs(a.fecha).valueOf());
     return lista;
   }, [productos]);
 
@@ -553,7 +551,11 @@ export const ProductosPage = () => {
         {cambiosGlobal.length === 0 ? (
           <Stack align="center" gap="md" py={60}>
             <EyeIcon className="w-10 h-10 text-zinc-700" />
-            <Text size="sm" fw={700} className="text-zinc-400 uppercase tracking-widest">
+            <Text
+              size="sm"
+              fw={700}
+              className="text-zinc-400 uppercase tracking-widest"
+            >
               Sin cambios registrados
             </Text>
             <Text size="xs" c="dimmed">

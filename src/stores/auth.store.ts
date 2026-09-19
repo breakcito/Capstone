@@ -36,14 +36,14 @@ export const useAuthStore = create<IAuthStore>()(
         }),
     }),
     {
-      name: "blacksilver-auth",
+      name: "capstone-auth",
     },
   ),
 );
 
 // Listener para sincronización entre pestañas
 window.addEventListener("storage", (event) => {
-  if (event.key === "blacksilver-auth") {
+  if (event.key === "capstone-auth") {
     if (event.newValue) {
       // Si hay un nuevo valor, intenta sincronizar (e.g., login en otra pestaña)
       useAuthStore.persist.rehydrate();

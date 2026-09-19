@@ -1,4 +1,8 @@
 export enum TipoProducto {
-  Bien = "Bien",
-  Servicio = "Servicio",
+  Herramientas = "Herramientas",
+  // Material = "Material",
+  Suministros = "Suministros",
+  Repuestos = "Repuestos",
+  EPPs = "EPPs",
+  Otros = "Otros",
 }

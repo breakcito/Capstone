@@ -24,7 +24,7 @@ import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useRegistroProducto } from "../hooks/useRegistroProducto";
 import type { RES_ProductoResumen } from "../service/productos.responses";
 import { Periodo } from "../../../shared/enums/_generic/periodo";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import { Moneda } from "../../../shared/enums/_generic/moneda";
 import { useDisclosure } from "@mantine/hooks";
 import { ModalEstandar } from "../../../presentation/utils/modal-estandar";

@@ -13,7 +13,7 @@ import type {
 import { AuxService } from "../../../service/auxiliar.service";
 import type { RES_ActivoFijoDisponible } from "../../../service/responses/activo-fijo";
 import type { RES_LoteMineral } from "../../../service/responses/lote-mineral";
-import { TipoBien } from "../../../shared/enums/_generic/tipo-bien";
+import { TipoBien } from "../../../shared/enums/_generic/tipo-producto";
 import { useNotify } from "../../../hooks/useNotify";
 import { usePrint } from "../../../hooks/usePrint";
 import {
@@ -77,7 +77,9 @@ export const useRegistrarEntregaBatch = ({
     {},
   );
   const [idEmpleadoRecibe, setIdEmpleadoRecibe] = useState<string | null>(null);
-  const [idContratistaRecibe, setIdContratistaRecibe] = useState<string | null>(null);
+  const [idContratistaRecibe, setIdContratistaRecibe] = useState<string | null>(
+    null,
+  );
   const [esContratistaRecibe, setEsContratistaRecibe] = useState(false);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [observacion, setObservacion] = useState("");
@@ -141,22 +143,28 @@ export const useRegistrarEntregaBatch = ({
           return;
         }
 
-        const [resEmps, resLotes, resActivos, resAllActivos, resLotesMineral, resContratistas] =
-          await Promise.all([
-            AuxService.get_empleados(),
-            idsConLote.length > 0
-              ? AuxService.get_lotes_disponibles(idAlmacen, idsConLote)
-              : Promise.resolve({ success: true, data: [] }),
-            idsActivoFijo.length > 0
-              ? AuxService.get_activos_disponibles({
-                  // id_almacen: idAlmacen,
-                  ids_productos: idsActivoFijo,
-                })
-              : Promise.resolve({ success: true, data: [] }),
-            AuxService.get_activos_disponibles(),
-            AuxService.get_lotes_mineral(),
-            AuxService.get_contratistas(),
-          ]);
+        const [
+          resEmps,
+          resLotes,
+          resActivos,
+          resAllActivos,
+          resLotesMineral,
+          resContratistas,
+        ] = await Promise.all([
+          AuxService.get_empleados(),
+          idsConLote.length > 0
+            ? AuxService.get_lotes_disponibles(idAlmacen, idsConLote)
+            : Promise.resolve({ success: true, data: [] }),
+          idsActivoFijo.length > 0
+            ? AuxService.get_activos_disponibles({
+                // id_almacen: idAlmacen,
+                ids_productos: idsActivoFijo,
+              })
+            : Promise.resolve({ success: true, data: [] }),
+          AuxService.get_activos_disponibles(),
+          AuxService.get_lotes_mineral(),
+          AuxService.get_contratistas(),
+        ]);
 
         if (cancelled) return;
 
@@ -327,7 +335,13 @@ export const useRegistrarEntregaBatch = ({
         setHasAutoSelected(true);
       }
     }
-  }, [idContratistaSolicitante, idEmpleadoSolicitante, empleados, contratistas, hasAutoSelected]);
+  }, [
+    idContratistaSolicitante,
+    idEmpleadoSolicitante,
+    empleados,
+    contratistas,
+    hasAutoSelected,
+  ]);
 
   const handleCantActivoChange = useCallback(
     (idDetalleReq: number, idActivo: number, val: number) => {
@@ -503,7 +517,9 @@ export const useRegistrarEntregaBatch = ({
   }, [entregaCantidades, entregaCantidadesActivos]);
 
   const handleConfirmar = async () => {
-    const receptorValido = esContratistaRecibe ? Boolean(idContratistaRecibe) : Boolean(idEmpleadoRecibe);
+    const receptorValido = esContratistaRecibe
+      ? Boolean(idContratistaRecibe)
+      : Boolean(idEmpleadoRecibe);
     if (!receptorValido) {
       setError("Debe seleccionar quién recibe los materiales");
       return;
@@ -662,8 +678,14 @@ export const useRegistrarEntregaBatch = ({
     try {
       const res = await AtencionService.registrarEntrega({
         id_requerimiento: idRequerimiento,
-        id_empleado_recibe: !esContratistaRecibe && idEmpleadoRecibe ? Number(idEmpleadoRecibe) : null,
-        id_contratista_recibe: esContratistaRecibe && idContratistaRecibe ? Number(idContratistaRecibe) : null,
+        id_empleado_recibe:
+          !esContratistaRecibe && idEmpleadoRecibe
+            ? Number(idEmpleadoRecibe)
+            : null,
+        id_contratista_recibe:
+          esContratistaRecibe && idContratistaRecibe
+            ? Number(idContratistaRecibe)
+            : null,
         fecha_entrega: dayjs().format("YYYY-MM-DD HH:mm:ss"),
         observacion,
         evidencias,
@@ -770,9 +792,7 @@ export const useRegistrarEntregaBatch = ({
   const buildSalidaItems = useCallback((): SalidaAlmacenItem[] => {
     const items: SalidaAlmacenItem[] = [];
 
-    const resolveDestinoDetalle = (
-      dest: DestinoItem,
-    ): string | null => {
+    const resolveDestinoDetalle = (dest: DestinoItem): string | null => {
       if (dest.tipo === "mantenimiento" && dest.id_activo_fijo_destino) {
         const d = allActivos.find(
           (a) => a.id_activo === dest.id_activo_fijo_destino,
@@ -841,7 +861,9 @@ export const useRegistrarEntregaBatch = ({
         const dest = destinosMap[key] || { tipo: "" };
 
         const cReq =
-          detail.equivReq && detail.equivReq > 0 ? cant / detail.equivReq : cant;
+          detail.equivReq && detail.equivReq > 0
+            ? cant / detail.equivReq
+            : cant;
 
         items.push({
           id_detalle: idDetalleReq,
