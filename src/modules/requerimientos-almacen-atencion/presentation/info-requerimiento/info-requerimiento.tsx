@@ -208,6 +208,7 @@ export const InfoRequerimiento = ({
       >
         {idAlmacen !== undefined && (
           <RegistrarEntrega
+            key={`registrar-entrega-${requerimiento.id_requerimiento}-${openedEntregaBatch}`}
             requerimiento={requerimiento}
             idRequerimiento={requerimiento.id_requerimiento}
             idAlmacen={idAlmacen}
