@@ -6,6 +6,7 @@ import {
   CalendarDaysIcon,
   PencilSquareIcon,
   LockClosedIcon,
+  NoSymbolIcon,
 } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import type { RES_RequerimientoAlmacen } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
@@ -52,12 +53,14 @@ const HeaderCard = ({ icon: Icon, label, value }: HeaderCardProps) => (
 interface InfoHeaderProps {
   requerimiento: RES_RequerimientoAlmacen;
   puedeEditar: boolean;
+  isAnulado?: boolean;
   onEditar: () => void;
 }
 
 export const InfoHeader = ({
   requerimiento,
   puedeEditar,
+  isAnulado = false,
   onEditar,
 }: InfoHeaderProps) => {
   return (
@@ -94,26 +97,44 @@ export const InfoHeader = ({
       <Paper
         p="md"
         radius="lg"
-        className="bg-amber-500/10 border border-amber-500/30 relative overflow-hidden"
+        className={
+          isAnulado
+            ? "bg-red-500/10 border border-red-500/30 relative overflow-hidden"
+            : "bg-amber-500/10 border border-amber-500/30 relative overflow-hidden"
+        }
       >
         <Stack gap={2} className="relative z-10 w-full h-full justify-center">
           <Group gap={6} className="shrink-0">
-            {puedeEditar ? (
+            {isAnulado ? (
+              <NoSymbolIcon className="size-4 text-red-400" />
+            ) : puedeEditar ? (
               <PencilSquareIcon className="size-4 text-amber-400" />
             ) : (
               <LockClosedIcon className="size-4 text-zinc-500" />
             )}
             <Text
               size="xs"
-              c={puedeEditar ? "amber.4" : "zinc.5"}
+              c={isAnulado ? "red.4" : puedeEditar ? "amber.4" : "zinc.5"}
               fw={800}
               className="uppercase tracking-widest"
             >
-              {puedeEditar ? "Editable" : "Bloqueado"}
+              {isAnulado ? "Anulado" : puedeEditar ? "Editable" : "Bloqueado"}
             </Text>
           </Group>
           <div className="flex-1 flex items-center min-h-6">
-            {puedeEditar ? (
+            {isAnulado ? (
+              <Tooltip
+                label="Este requerimiento ha sido anulado. No se permiten ediciones ni alteraciones de ningún tipo."
+                position="top"
+                withArrow
+                multiline
+                w={280}
+              >
+                <Text size="xs" c="red.3" fs="italic">
+                  Requerimiento anulado · Solo lectura
+                </Text>
+              </Tooltip>
+            ) : puedeEditar ? (
               <Button
                 leftSection={<PencilSquareIcon className="size-4" />}
                 color="amber"

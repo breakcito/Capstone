@@ -23,6 +23,7 @@ import {
   PrinterIcon,
   DocumentArrowDownIcon,
   XCircleIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import { type DataTableColumn } from "mantine-datatable";
@@ -223,6 +224,7 @@ export const RequerimientosAlmacenAtencionPage = () => {
                   radius="md"
                   onClick={() => {
                     setSelectedId(item.id_requerimiento);
+                    setSelectedRequerimiento(item);
                     setEvidenciasActuales(item.evidencias!);
                     setNuevasEvidencias([]);
                     openEvidencias();
@@ -268,10 +270,26 @@ export const RequerimientosAlmacenAtencionPage = () => {
                 </ActionIcon>
               </Tooltip>
             )}
-            <Tooltip label="Gestionar Atención" position="top" withArrow>
+            <Tooltip
+              label={
+                item.estado === Estado_Requerimiento.Anulado
+                  ? "Ver Detalle (Anulado)"
+                  : "Gestionar Atención"
+              }
+              position="top"
+              withArrow
+            >
               <ActionIcon
-                variant="filled"
-                color="indigo"
+                variant={
+                  item.estado === Estado_Requerimiento.Anulado
+                    ? "light"
+                    : "filled"
+                }
+                color={
+                  item.estado === Estado_Requerimiento.Anulado
+                    ? "gray"
+                    : "indigo"
+                }
                 radius="md"
                 onClick={() => {
                   setSelectedRequerimiento(item);
@@ -279,7 +297,11 @@ export const RequerimientosAlmacenAtencionPage = () => {
                 }}
                 className="shadow-md hover:scale-105 transition-transform"
               >
-                <PlayCircleIcon className="w-5 h-5 text-white" />
+                {item.estado === Estado_Requerimiento.Anulado ? (
+                  <EyeIcon className="w-5 h-5" />
+                ) : (
+                  <PlayCircleIcon className="w-5 h-5 text-white" />
+                )}
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -499,50 +521,54 @@ export const RequerimientosAlmacenAtencionPage = () => {
             ))}
           </div>
 
-          <div className="h-px bg-zinc-800 my-2" />
+          {selectedRequerimiento?.estado !== Estado_Requerimiento.Anulado && (
+            <>
+              <div className="h-px bg-zinc-800 my-2" />
 
-          <MultiFilePicker
-            label="Subir más evidencias"
-            files={nuevasEvidencias}
-            onFilesChange={setNuevasEvidencias}
-          />
+              <MultiFilePicker
+                label="Subir más evidencias"
+                files={nuevasEvidencias}
+                onFilesChange={setNuevasEvidencias}
+              />
 
-          {nuevasEvidencias.length > 0 && (
-            <Group justify="flex-end">
-              <Button
-                size="xs"
-                radius="lg"
-                color="indigo"
-                loading={subiendoEvidencias}
-                onClick={async () => {
-                  if (!selectedId || nuevasEvidencias.length === 0) return;
-                  setSubiendoEvidencias(true);
-                  try {
-                    const res = await AtencionService.subirEvidencias(
-                      selectedId,
-                      nuevasEvidencias,
-                    );
-                    if (res.success && res.data) {
-                      notifySuccess("Evidencias agregadas correctamente");
-                      setEvidenciasActuales(res.data);
-                      setNuevasEvidencias([]);
-                      updateRequirementLocal(selectedId, {
-                        evidencias: res.data,
-                      });
-                    } else {
-                      notifyError(res.message || "Error al subir evidencias");
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    notifyError("Error al subir evidencias");
-                  } finally {
-                    setSubiendoEvidencias(false);
-                  }
-                }}
-              >
-                Guardar Nuevas Evidencias
-              </Button>
-            </Group>
+              {nuevasEvidencias.length > 0 && (
+                <Group justify="flex-end">
+                  <Button
+                    size="xs"
+                    radius="lg"
+                    color="indigo"
+                    loading={subiendoEvidencias}
+                    onClick={async () => {
+                      if (!selectedId || nuevasEvidencias.length === 0) return;
+                      setSubiendoEvidencias(true);
+                      try {
+                        const res = await AtencionService.subirEvidencias(
+                          selectedId,
+                          nuevasEvidencias,
+                        );
+                        if (res.success && res.data) {
+                          notifySuccess("Evidencias agregadas correctamente");
+                          setEvidenciasActuales(res.data);
+                          setNuevasEvidencias([]);
+                          updateRequirementLocal(selectedId, {
+                            evidencias: res.data,
+                          });
+                        } else {
+                          notifyError(res.message || "Error al subir evidencias");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        notifyError("Error al subir evidencias");
+                      } finally {
+                        setSubiendoEvidencias(false);
+                      }
+                    }}
+                  >
+                    Guardar Nuevas Evidencias
+                  </Button>
+                </Group>
+              )}
+            </>
           )}
         </Stack>
       </ModalEstandar>
@@ -553,7 +579,11 @@ export const RequerimientosAlmacenAtencionPage = () => {
           closeGestion();
           setSelectedRequerimiento(null);
         }}
-        title={`Atender Requerimiento de Almacén`}
+        title={
+          selectedRequerimiento?.estado === Estado_Requerimiento.Anulado
+            ? `Detalle de Requerimiento de Almacén · ${selectedRequerimiento.correlativo} (Anulado)`
+            : `Atender Requerimiento de Almacén`
+        }
         size="80rem"
       >
         {selectedRequerimiento && (
@@ -561,10 +591,12 @@ export const RequerimientosAlmacenAtencionPage = () => {
             requerimiento={selectedRequerimiento}
             idAlmacen={Number(idAlmacen)}
             onSuccess={() => {
-              // Actualizamos localmente el estado a 'En Proceso' para evitar re-fetch de la lista general
-              updateRequirementLocal(selectedRequerimiento.id_requerimiento, {
-                estado: Estado_Requerimiento.EnDespacho,
-              });
+              if (selectedRequerimiento.estado !== Estado_Requerimiento.Anulado) {
+                // Actualizamos localmente el estado a 'En Proceso' para evitar re-fetch de la lista general
+                updateRequirementLocal(selectedRequerimiento.id_requerimiento, {
+                  estado: Estado_Requerimiento.EnDespacho,
+                });
+              }
             }}
           />
         )}
@@ -583,6 +615,11 @@ export const RequerimientosAlmacenAtencionPage = () => {
           updateRequirementLocal(id, {
             estado: Estado_Requerimiento.Anulado,
           });
+          if (selectedRequerimiento?.id_requerimiento === id) {
+            setSelectedRequerimiento((prev) =>
+              prev ? { ...prev, estado: Estado_Requerimiento.Anulado } : null,
+            );
+          }
         }}
       />
 

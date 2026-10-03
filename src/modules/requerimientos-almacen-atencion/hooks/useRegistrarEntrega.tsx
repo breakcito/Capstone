@@ -10,6 +10,7 @@ import type {
   RES_DetalleRequerimiento,
   RES_RequerimientoAlmacen,
 } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
+import { Estado_Requerimiento } from "../../../shared/enums/requerimiento-almacen/requerimiento";
 import { AuxService } from "../../../service/auxiliar.service";
 // Tipos auxiliares para catalogos que el hook no usa en detalle pero
 // mantiene en el estado para compatibilidad.
@@ -489,6 +490,12 @@ export const useRegistrarEntregaBatch = ({
   }, [entregaCantidades, entregaCantidadesActivos]);
 
   const handleConfirmar = async () => {
+    if (requerimiento.estado === Estado_Requerimiento.Anulado) {
+      setError("No se pueden registrar entregas para un requerimiento anulado");
+      notifyError("No se pueden registrar entregas para un requerimiento anulado");
+      return;
+    }
+
     const receptorValido = esContratistaRecibe
       ? Boolean(idContratistaRecibe)
       : Boolean(idEmpleadoRecibe);

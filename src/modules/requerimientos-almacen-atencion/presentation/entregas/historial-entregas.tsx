@@ -30,6 +30,7 @@ import { ModalAnularEntrega } from "../components/ModalAnularEntrega";
 
 interface HistorialProps {
   idRequerimiento: number;
+  readOnly?: boolean;
   /**
    * Callback que se llama cuando una entrega fue anulada exitosamente.
    * La pagina padre lo usa para refrescar el requerimiento completo
@@ -40,6 +41,7 @@ interface HistorialProps {
 
 export const HistorialEntregasRequerimiento = ({
   idRequerimiento,
+  readOnly = false,
   onEntregaAnulada,
 }: HistorialProps) => {
   const { loading, historial, error } =
@@ -178,7 +180,8 @@ export const HistorialEntregasRequerimiento = ({
                       >
                         {h.estado}
                       </Badge>
-                      {h.estado === Estado_EntregaRequerimiento.Entregado && (
+                      {!readOnly &&
+                        h.estado === Estado_EntregaRequerimiento.Entregado && (
                         <Tooltip
                           label="Anular entrega y reintegrar stock al lote"
                           position="top"

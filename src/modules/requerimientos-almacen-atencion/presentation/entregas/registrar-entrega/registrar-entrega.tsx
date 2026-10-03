@@ -8,6 +8,7 @@ import type {
   RES_DetalleRequerimiento,
   RES_RequerimientoAlmacen,
 } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
+import { Estado_Requerimiento } from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
 
 interface RegistrarEntregaProps {
   requerimiento: RES_RequerimientoAlmacen;
@@ -79,6 +80,13 @@ export const RegistrarEntrega = ({
       <div className="flex justify-center py-20">
         <Loader color="indigo" size="lg" />
       </div>
+    );
+
+  if (requerimiento.estado === Estado_Requerimiento.Anulado)
+    return (
+      <Text c="red" fw={600} py={20} ta="center">
+        No se pueden registrar entregas para un requerimiento anulado.
+      </Text>
     );
 
   if (selectedDetalles.length === 0)
