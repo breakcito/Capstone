@@ -360,15 +360,30 @@ export const InfoItemsTable = ({
                           Atendido: {formatNumber(item.cantidad_entregada ?? 0)}{" "}
                           {item.unidad_medida_req_abv}
                         </Text>
-                        <Text size="10px" fw={900} c="indigo.4">
-                          {item.porcentaje_progreso ?? 0}%
-                        </Text>
+                        {Number(item.porcentaje_progreso ?? 0) > 0 ? (
+                          <Text size="10px" fw={900} c="indigo.4">
+                            {item.porcentaje_progreso}%
+                          </Text>
+                        ) : (
+                          <Text size="10px" fw={700} c="zinc.6">
+                            Sin avance
+                          </Text>
+                        )}
                       </div>
-                      <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/30">
-                        <div
-                          className="h-full bg-linear-to-r from-indigo-600 to-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.3)] transition-all duration-700"
-                          style={{ width: `${item.porcentaje_progreso}%` }}
-                        />
+                      {/*
+                        Solo dibujamos la barra de progreso cuando hay
+                        algo despachado. Una barra vacia (width: 0%) se
+                        confunde con un progreso "muy chico" y agrega
+                        ruido visual. Cuando es 0, dejamos un contenedor
+                        vacio del mismo alto para que la fila no salte.
+                      */}
+                      <div className="h-1.5 w-full bg-zinc-800/40 rounded-full overflow-hidden border border-zinc-700/30">
+                        {Number(item.porcentaje_progreso ?? 0) > 0 ? (
+                          <div
+                            className="h-full bg-linear-to-r from-indigo-600 to-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.3)] transition-all duration-700"
+                            style={{ width: `${item.porcentaje_progreso}%` }}
+                          />
+                        ) : null}
                       </div>
                     </div>
                   </td>

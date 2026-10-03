@@ -119,8 +119,20 @@ export const LoteRow = ({
               size="xs"
               radius="xl"
               min={0}
-              max={maxLote}
-              value={cant > 0 ? (cant / detalle_req.equivReq).toFixed(2) : ""}
+              max={
+                // Usamos el equiv del LOTE (no equivReq del detalle) tanto
+                // para el max como para el render. Asi lo que el usuario
+                // escribe en la unidad del lote se refleja consistente
+                // con lo que se guarda en base.
+                lote.contenido_por_presentacion > 0
+                  ? (maxBase / lote.contenido_por_presentacion)
+                  : maxLote
+              }
+              value={
+                cant > 0 && lote.contenido_por_presentacion > 0
+                  ? (cant / lote.contenido_por_presentacion).toFixed(2)
+                  : ""
+              }
               onChange={(val) =>
                 handleCantLoteChange(idDetalleReq, lote.id_lote, Number(val))
               }
@@ -134,7 +146,7 @@ export const LoteRow = ({
                   c="violet"
                   style={{ pointerEvents: "none", userSelect: "none" }}
                 >
-                  {detalle_req.unidad_medida_req_abv}
+                  {lote.unidad_medida_lote_abv || detalle_req.unidad_medida_req_abv}
                 </Text>
               }
               rightSectionWidth={48}

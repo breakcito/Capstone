@@ -10,26 +10,19 @@ import {
   Text,
   TextInput,
   Textarea,
-  Loader,
   Checkbox,
   Tooltip,
 } from "@mantine/core";
 import {
-  WrenchScrewdriverIcon,
   ShoppingCartIcon,
-  HandThumbUpIcon,
-  BoltIcon,
-  FireIcon,
   PlusIcon,
   TrashIcon,
-  MapPinIcon,
   UserIcon,
   UserGroupIcon,
   BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import { useRegistroRequerimiento } from "../../hooks/useRegistroRequerimiento";
 import type { ModoRequerimiento } from "../../hooks/useRegistroRequerimiento";
-import { Premura } from "../../../../shared/enums/_generic/premura";
 import { TipoBien } from "../../../../shared/enums/_generic/tipo-producto";
 import { CustomDatePicker } from "../../../../presentation/utils/date-picker-input";
 import { enPlural } from "../../../../shared/functions/en-plural";
@@ -87,20 +80,13 @@ export const RegistroRequerimiento = ({
       contratistas,
       verContratistas,
       setVerContratistas,
-      labores,
+      idEmpleadoSolicitante,
+      setIdEmpleadoSolicitante,
       productos,
       unidades,
       detalles,
-      idLabor,
-      setIdLabor,
-      idEmpleadoSolicitante,
-      setIdEmpleadoSolicitante,
       fechaSolicitud,
       setFechaSolicitud,
-      fechaEntregaRequerida,
-      setFechaEntregaRequerida,
-      premura,
-      setPremura,
       observacion,
       setObservacion,
       evidencias,
@@ -117,18 +103,12 @@ export const RegistroRequerimiento = ({
       setCalculoInteligente,
       comentarioItem,
       setComentarioItem,
-      paraMantenimientoItem,
-      setParaMantenimientoItem,
-      idActivoFijoDestino,
-      setIdActivoFijoDestino,
       productoBusqueda,
       setProductoBusqueda,
       unidadBusqueda,
       setUnidadBusqueda,
-      activos,
-      idAlmacenDestino,
     },
-    status: { submitting, error, loadingLabores, loadingMinaData },
+    status: { submitting, error },
     derived: {
       sonUnidadesIdenticas,
       productoSeleccionado,
@@ -201,27 +181,8 @@ export const RegistroRequerimiento = ({
       {/* cabecera del requerimiento  */}
       <section>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-6">
-          <Select
-            label="Labor (opc.)"
-            placeholder="Seleccione labor"
-            data={labores.map((l) => ({
-              value: String(l.id_labor),
-              label: l.nombre,
-            }))}
-            value={idLabor ? String(idLabor) : null}
-            onChange={(val) => setIdLabor(Number(val))}
-            classNames={inputClasses}
-            radius="lg"
-            searchable
-            disabled={!idAlmacenDestino}
-            leftSection={
-              loadingLabores ? (
-                <Loader size="xs" />
-              ) : (
-                <MapPinIcon className="w-4 h-4 text-zinc-400" />
-              )
-            }
-          />
+          {/* "Labor (opc.)" eliminado: la tabla requerimiento_almacen ya no
+              tiene la columna id_labor. */}
 
           <div className="flex items-end gap-2">
             <Select
@@ -238,8 +199,17 @@ export const RegistroRequerimiento = ({
               data={
                 verContratistas
                   ? contratistas.map((r) => ({
-                      value: String(r.id_contratista),
-                      label: r.nombre_completo ?? "",
+                      // El endpoint /api/aux/contratistas devuelve
+                      // `id_empleado` (porque los contratistas viven en la
+                      // tabla empleado con es_contratista=1). Algunos
+                      // endpoints viejos devuelven `id_contratista`.
+                      value: String(
+                        r.id_empleado ?? r.id_contratista ?? r.idContratista ?? 0,
+                      ),
+                      label:
+                        r.nombre_completo ??
+                        `${r.nombre ?? ""} ${r.apellido ?? ""}`.trim() ??
+                        "",
                     }))
                   : empleados.map((r) => ({
                       value: String(r.id_empleado),
@@ -255,9 +225,7 @@ export const RegistroRequerimiento = ({
               searchable
               className="flex-1"
               leftSection={
-                loadingMinaData ? (
-                  <Loader size="xs" />
-                ) : verContratistas ? (
+                verContratistas ? (
                   <BriefcaseIcon className="w-4 h-4 text-zinc-400" />
                 ) : (
                   <UserIcon className="w-4 h-4 text-zinc-400" />
@@ -297,14 +265,9 @@ export const RegistroRequerimiento = ({
             radius="lg"
           />
 
-          <CustomDatePicker
-            label="Fecha de Entrega (opc.)"
-            placeholder="Seleccione fecha"
-            value={fechaEntregaRequerida}
-            onChange={(val) => setFechaEntregaRequerida(val as Date | null)}
-            radius="lg"
-            minDate={fechaSolicitud || undefined}
-          />
+          {/* "Fecha de Entrega (opc.)" eliminado: la tabla
+              requerimiento_almacen ya no tiene la columna
+              fecha_entrega_requerida. */}
 
           <div className="lg:col-span-2">
             <Textarea
@@ -318,67 +281,14 @@ export const RegistroRequerimiento = ({
             />
           </div>
 
-          <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Bloque de Archivos */}
-            <div className="w-full">
-              <MultiFilePicker
-                label="Evidencias"
-                files={evidencias}
-                onFilesChange={setEvidencias}
-              />
-            </div>
-
-            {/* Bloque de Prioridad */}
-            <div className="w-full flex flex-col gap-2">
-              <Stack gap={2}>
-                <Text
-                  size="xs"
-                  fw={700}
-                  className="text-zinc-400 uppercase tracking-widest"
-                >
-                  Prioridad
-                </Text>
-                <Text size="sm" fw={600} className="text-white">
-                  Nivel de Urgencia
-                </Text>
-              </Stack>
-
-              <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                <Button
-                  size="xs"
-                  variant={premura === Premura.Normal ? "filled" : "light"}
-                  color="blue"
-                  onClick={() => setPremura(Premura.Normal)}
-                  leftSection={<HandThumbUpIcon className="w-3.5 h-3.5" />}
-                  radius="md"
-                  className="h-10 flex-1 font-bold"
-                >
-                  NORMAL
-                </Button>
-                <Button
-                  size="xs"
-                  variant={premura === Premura.Urgente ? "filled" : "light"}
-                  color="orange"
-                  onClick={() => setPremura(Premura.Urgente)}
-                  leftSection={<BoltIcon className="w-3.5 h-3.5" />}
-                  radius="md"
-                  className="h-10 flex-1 font-bold"
-                >
-                  URGENTE
-                </Button>
-                <Button
-                  size="xs"
-                  variant={premura === Premura.Emergencia ? "filled" : "light"}
-                  color="red"
-                  onClick={() => setPremura(Premura.Emergencia)}
-                  leftSection={<FireIcon className="w-3.5 h-3.5" />}
-                  radius="md"
-                  className="h-10 flex-1 font-bold"
-                >
-                  EMERGENCIA
-                </Button>
-              </div>
-            </div>
+          <div className="lg:col-span-3">
+            {/* "Bloque de Prioridad (NORMAL/URGENTE/EMERGENCIA)" eliminado: la
+                tabla requerimiento_almacen ya no tiene la columna premura. */}
+            <MultiFilePicker
+              label="Evidencias"
+              files={evidencias}
+              onFilesChange={setEvidencias}
+            />
           </div>
         </div>
       </section>
@@ -525,71 +435,21 @@ export const RegistroRequerimiento = ({
               />
             </div>
             <div className="md:col-span-6 self-start flex flex-col gap-1.5">
-              <div className="flex justify-between items-center h-5 mb-0.5">
-                <span className="text-zinc-300 font-semibold tracking-tight text-[13px] md:text-sm">
-                  {paraMantenimientoItem && productoSeleccionado
-                    ? "Equipo Destino"
-                    : "Comentario del ítem"}
-                </span>
-                <Checkbox
-                  label="Mantenimiento"
-                  checked={paraMantenimientoItem}
-                  disabled={
-                    !productoSeleccionado ||
-                    !productoSeleccionado.para_mantenimiento
-                  }
-                  onChange={(event) =>
-                    setParaMantenimientoItem(event.currentTarget.checked)
-                  }
-                  size="xs"
-                  color="indigo"
-                  radius="sm"
-                  classNames={{
-                    input:
-                      productoSeleccionado &&
-                      productoSeleccionado.para_mantenimiento
-                        ? "cursor-pointer"
-                        : "cursor-not-allowed",
-                    label: `font-semibold text-xs ${
-                      productoSeleccionado &&
-                      productoSeleccionado.para_mantenimiento
-                        ? "text-zinc-300 cursor-pointer"
-                        : "text-zinc-600 cursor-not-allowed"
-                    }`,
-                  }}
-                />
-              </div>
-
-              <div className="animate-fade-in">
-                {paraMantenimientoItem && productoSeleccionado ? (
-                  <Select
-                    placeholder="Seleccione equipo"
-                    data={activos.map((a) => ({
-                      value: String(a.id_activo),
-                      label: `${a.correlativo} - ${a.producto}`,
-                    }))}
-                    value={
-                      idActivoFijoDestino ? String(idActivoFijoDestino) : null
-                    }
-                    onChange={(val) => setIdActivoFijoDestino(Number(val))}
-                    searchable
-                    classNames={inputClasses}
-                    radius="lg"
-                    size="sm"
-                  />
-                ) : (
-                  <TextInput
-                    placeholder="Notas adicionales para este producto..."
-                    value={comentarioItem}
-                    onChange={(e) => setComentarioItem(e.target.value)}
-                    classNames={inputClasses}
-                    radius="lg"
-                    size="sm"
-                  />
-                )}
-              </div>
+              <span className="text-zinc-300 font-semibold tracking-tight text-[13px] md:text-sm">
+                Comentario del ítem
+              </span>
+              {/* Bloque "Mantenimiento" eliminado: la tabla
+                  requerimiento_almacen_detalle ya no tiene las columnas
+                  para_mantenimiento / id_activo_fijo_destino. */}
+              <TextInput
+                placeholder="Notas adicionales para este producto..."
+                value={comentarioItem}
+                onChange={(e) => setComentarioItem(e.target.value)}
+                classNames={inputClasses}
+                radius="lg"
+                size="sm"
+              />
             </div>
-
             <div className="md:col-span-2 self-start mt-6.5">
               <Button
                 onClick={agregarItem}
@@ -911,14 +771,7 @@ export const RegistroRequerimiento = ({
                       </Group>
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-400">
-                      {det.para_mantenimiento ? (
-                        <div className="text-xs text-amber-500 font-semibold flex items-center gap-1.5">
-                          <WrenchScrewdriverIcon className="w-3.5 h-3.5 text-amber-500" />
-                          <span>{det.comentario}</span>
-                        </div>
-                      ) : (
-                        det.comentario || "-"
-                      )}
+                      {det.comentario || "-"}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {det.bloqueado ? (
@@ -961,7 +814,6 @@ export const RegistroRequerimiento = ({
               fw={700}
               className="flex items-center gap-2"
             >
-              <BoltIcon className="w-4 h-4" />
               {error}
             </Text>
           </div>

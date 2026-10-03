@@ -8,6 +8,15 @@ export enum Estado_Requerimiento {
   Completado = "Completado",
 }
 
+/**
+ * Estados posibles de un DETALLE del requerimiento (`requerimiento_almacen_detalle`).
+ *
+ * NOTA: Aunque los nombres `EsperandoAprobacion` y `AprobadoLogistica` se
+ * mantienen por compatibilidad con el codigo existente del modulo de
+ * atencion (gestion y trazabilidad), sus valores son alias de `Pendiente`
+ * y `Aprobado` respectivamente. La BD actualmente no los usa directamente,
+ * pero la UI puede compararlos por nombre.
+ */
 export enum Estado_RequerimientoDetalle {
   Pendiente = "Pendiente",
   Rechazado = "Rechazado",
@@ -28,4 +37,13 @@ export enum Estado_RequerimientoDetalleLog {
   Rechazado = "Rechazado",
   Completado = "Completado",
   Cerrado = "Cerrado",
+}
+
+/**
+ * Estados posibles de una ENTREGA (cabecera `requerimiento_almacen_entrega`).
+ * La cabecera nace como "Entregado" y, si se anula, pasa a "Anulado".
+ */
+export enum Estado_RequerimientoEntrega {
+  Entregado = "Entregado",
+  Anulado = "Anulado",
 }

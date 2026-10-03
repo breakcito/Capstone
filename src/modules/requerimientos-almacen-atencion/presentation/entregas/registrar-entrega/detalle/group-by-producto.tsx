@@ -19,7 +19,9 @@ interface GroupByProductoProps {
   entregaCantidades: Record<number, Record<number, number>>;
   entregaCantidadesActivos?: Record<number, Record<number, number>>;
   allActivos?: unknown[];
-  lotesMineral?: unknown[];
+  // Nota: la logica de "lote de mineral destino" ya no aplica al modelo
+  // actual (la columna id_lote_mineral no existe en requerimiento_almacen_detalle).
+  // Por eso no se pasa ningun prop de mineral.
   destinosMap?: unknown;
   handleCantChange: (idDetalle: number, idLote: number, cant: number) => void;
   handleCantLoteChange: (

@@ -184,7 +184,12 @@ export const InfoRequerimiento = ({
             idAlmacen={idAlmacen}
             selectedItemsIds={selectedItemsIds}
             detallesRequerimiento={detalles}
+            // Solicitante dual: si es contratista lo lleva
+            // `id_contratista_solicitante`; si es empleado lo lleva
+            // `id_empleado_registro` (porque en ese caso se sobrescribio
+            // al logueado con el id del solicitante-empleado).
             idContratistaSolicitante={requerimiento.id_contratista_solicitante}
+            idEmpleadoSolicitante={requerimiento.id_empleado_registro}
             onSuccess={(entregados) => {
               patchDetallesLocales(entregados);
               deselectAllItems();

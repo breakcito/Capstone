@@ -1,8 +1,36 @@
 import { Estado_RequerimientoDetalle } from "../../../shared/enums/requerimiento-almacen/requerimiento";
 import { z } from "zod";
 
+/**
+ * Quien solicita el requerimiento puede ser un contratista (dato de
+ * negocio) o un empleado interno. Ambos viven en la tabla `empleado`:
+ * los contratistas tienen `es_contratista = 1`.
+ *
+ * Reglas al guardar:
+ * - Si `solicitante_es_contratista = true`  → se guarda el id en
+ *   `requerimiento_almacen.id_contratista_solicitante` y
+ *   `id_empleado_registro` queda con el empleado logueado (quien registra).
+ * - Si `solicitante_es_contratista = false` → se guarda el id en
+ *   `requerimiento_almacen.id_empleado_registro` (sobrescribiendo al
+ *   logueado, porque el solicitante ES ese empleado) y
+ *   `id_contratista_solicitante` queda null.
+ *
+ * Por eso el campo `id_contratista_solicitante` del DTO se usa en realidad
+ * como "id del solicitante" (la BD lo guarda en la columna que corresponda
+ * segun el flag).
+ */
 export interface DTO_CrearRequerimiento {
+  /**
+   * Id del solicitante (sea contratista o empleado). Es el id de la
+   * tabla `empleado`. El backend decide en que columna persiste segun
+   * `solicitante_es_contratista`.
+   */
   id_contratista_solicitante?: number | null;
+  /**
+   * Si el solicitante es un contratista (true) o un empleado (false).
+   * Determina en que columna de la BD se persiste el id.
+   */
+  solicitante_es_contratista?: boolean;
   id_almacen_destino: number;
   fecha_solicitud?: string | null;
   observacion?: string | null;
@@ -67,6 +95,7 @@ export interface DTO_DetalleEditado {
 
 export interface DTO_EditarRequerimiento {
   id_contratista_solicitante?: number | null;
+  solicitante_es_contratista?: boolean;
   fecha_solicitud?: string;
   observacion?: string;
   evidencias_nuevas?: File[];
@@ -77,8 +106,12 @@ export interface DTO_EditarRequerimiento {
 
 export interface DTO_RegistrarEntrega {
   id_requerimiento: number;
+  /**
+   * Empleado que recibe la entrega. Si es un contratista, su id
+   * tambien va aqui (los contratistas viven en la tabla empleado
+   * con es_contratista=1).
+   */
   id_empleado_recibe?: number | null;
-  id_contratista_recibe?: number | null;
   fecha_entrega: string;
   observacion?: string;
   evidencias?: File[];
@@ -88,12 +121,11 @@ export interface DTO_RegistrarEntrega {
 export interface DTO_RegistrarEntregaDetalle {
   id_requerimiento_almacen_detalle: number;
   id_lote_producto?: number;
+  id_activo_fijo?: number | null;
   cantidad_base: number;
   cantidad_lote: number;
   cantidad_requerimiento: number;
-  id_activo_fijo?: number | null;
-  para_mantenimiento?: boolean;
-  para_produccion?: boolean;
-  id_activo_fijo_destino?: number | null;
-  id_lote_mineral?: number | null;
+  // NOTA: campos viejos del modelo anterior que ya no aplican
+  // (para_produccion, id_lote_mineral, etc). Se eliminaron
+  // para alinear con la nueva estructura de la BD.
 }

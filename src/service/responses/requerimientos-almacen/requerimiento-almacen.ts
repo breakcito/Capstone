@@ -11,7 +11,14 @@ export interface RES_RequerimientoAlmacen {
   id_requerimiento: number;
   id_almacen_destino: number;
   almacen_destino: string;
+  /**
+   * Si el solicitante es un contratista, su id de empleado vive aqui.
+   * Si es un empleado interno, queda null y `id_empleado_registro`
+   * guarda el id del solicitante-empleado (porque sobrescribimos al
+   * logueado en ese caso).
+   */
   id_contratista_solicitante: number | null;
+  id_empleado_registro: number;
   solicitante: string;
   empleado_registro: string;
   correlativo: string;
@@ -20,6 +27,11 @@ export interface RES_RequerimientoAlmacen {
   fecha_solicitud: string | null;
   estado: Estado_Requerimiento;
   created_at: string;
+  /**
+   * Progreso general del requerimiento en porcentaje (0-100). Promedio
+   * de los porcentajes de cada detalle. 0 si no hay entregas.
+   */
+  porcentaje_progreso_general?: number;
   detalles?: RES_DetalleRequerimiento[];
 }
 
