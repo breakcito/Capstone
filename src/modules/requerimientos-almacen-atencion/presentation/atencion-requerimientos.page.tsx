@@ -22,6 +22,7 @@ import {
   PaperClipIcon,
   PrinterIcon,
   DocumentArrowDownIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import { type DataTableColumn } from "mantine-datatable";
@@ -39,6 +40,7 @@ import { ArchivoCard } from "../../../presentation/utils/archivo/archivo-card.ts
 import { MultiFilePicker } from "../../../presentation/utils/archivo/multifile-picker.tsx";
 import { useNotify } from "../../../hooks/useNotify.ts";
 import { AtencionService } from "../service/atencion.service.ts";
+import { ModalAnularRequerimiento } from "./components/ModalAnularRequerimiento.tsx";
 import { useImprimirRequerimiento } from "../hooks/useImprimirRequerimiento.tsx";
 import { usePrint } from "../../../hooks/usePrint.ts";
 import { RequerimientoPDF } from "./requerimiento-pdf.tsx";
@@ -66,6 +68,12 @@ export const RequerimientosAlmacenAtencionPage = () => {
   const { notifySuccess, notifyError } = useNotify();
   const [nuevasEvidencias, setNuevasEvidencias] = useState<File[]>([]);
   const [subiendoEvidencias, setSubiendoEvidencias] = useState(false);
+
+  // Modal de anulacion de requerimiento
+  const [openedAnular, { open: openAnular, close: closeAnular }] =
+    useDisclosure(false);
+  const [requerimientoAAnular, setRequerimientoAAnular] =
+    useState<RES_RequerimientoAlmacen | null>(null);
 
   const {
     idAlmacen,
@@ -240,6 +248,26 @@ export const RequerimientosAlmacenAtencionPage = () => {
                 <PrinterIcon className="w-5 h-5 font-bold" />
               </ActionIcon>
             </Tooltip>
+            {item.estado !== Estado_Requerimiento.Anulado && (
+              <Tooltip
+                label="Anular Requerimiento"
+                position="top"
+                withArrow
+              >
+                <ActionIcon
+                  variant="light"
+                  color="red"
+                  radius="md"
+                  onClick={() => {
+                    setRequerimientoAAnular(item);
+                    openAnular();
+                  }}
+                  className="shadow-sm hover:scale-105 transition-transform"
+                >
+                  <XCircleIcon className="w-5 h-5 font-bold" />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Tooltip label="Gestionar Atención" position="top" withArrow>
               <ActionIcon
                 variant="filled"
@@ -541,6 +569,22 @@ export const RequerimientosAlmacenAtencionPage = () => {
           />
         )}
       </ModalEstandar>
+
+      {/* Modal para anular el requerimiento completo */}
+      <ModalAnularRequerimiento
+        opened={openedAnular}
+        close={() => {
+          closeAnular();
+          setRequerimientoAAnular(null);
+        }}
+        requerimiento={requerimientoAAnular}
+        onAnulado={(id) => {
+          // Actualizamos localmente para evitar re-fetch de la lista general
+          updateRequirementLocal(id, {
+            estado: Estado_Requerimiento.Anulado,
+          });
+        }}
+      />
 
       {errorLocal && (
         <Text c="red" size="sm" mt="md">

@@ -25,6 +25,14 @@ export const AtencionService = {
         String(dto.id_contratista_solicitante),
       );
     }
+    // Flag que indica al backend en que columna persistir el id.
+    // true -> id_contratista_solicitante, false -> id_empleado_registro.
+    if (dto.solicitante_es_contratista !== undefined) {
+      formData.append(
+        "solicitante_es_contratista",
+        dto.solicitante_es_contratista ? "1" : "0",
+      );
+    }
     formData.append("id_almacen_destino", String(dto.id_almacen_destino));
     if (dto.fecha_solicitud) {
       formData.append("fecha_solicitud", dto.fecha_solicitud);
@@ -117,10 +125,10 @@ export const AtencionService = {
       const formData = new FormData();
       formData.append("id_requerimiento", dto.id_requerimiento.toString());
       if (dto.id_empleado_recibe) {
-        formData.append("id_empleado_recibe", dto.id_empleado_recibe.toString());
-      }
-      if (dto.id_contratista_recibe) {
-        formData.append("id_contratista_recibe", dto.id_contratista_recibe.toString());
+        formData.append(
+          "id_empleado_recibe",
+          dto.id_empleado_recibe.toString(),
+        );
       }
       formData.append("fecha_entrega", dto.fecha_entrega);
       if (dto.observacion) formData.append("observacion", dto.observacion);
@@ -192,6 +200,33 @@ export const AtencionService = {
     return res.data;
   },
 
+  /**
+   * Anula un requerimiento completo.
+   * Solo funciona si NO tiene entregas activas (estado='Entregado').
+   */
+  anularRequerimiento: async (
+    idRequerimiento: number,
+    motivo?: string,
+  ) => {
+    const res = await api.post<IRespuesta<null>>(
+      `${path}/${idRequerimiento}/anular`,
+      motivo ? { motivo } : {},
+    );
+    return res.data;
+  },
+
+  /**
+   * Anula una entrega especifica: devuelve stock al lote y registra
+   * el movimiento inverso en Kardex (Ingreso / Reingreso).
+   */
+  anularEntrega: async (idEntrega: number, motivo?: string) => {
+    const res = await api.post<IRespuesta<null>>(
+      `${path}/entregas/${idEntrega}/anular`,
+      motivo ? { motivo } : {},
+    );
+    return res.data;
+  },
+
 
   subirEvidencias: async (idRequerimiento: number, evidencias: File[]) => {
     const formData = new FormData();
@@ -220,6 +255,12 @@ export const AtencionService = {
         dto.id_contratista_solicitante === null
           ? ""
           : String(dto.id_contratista_solicitante),
+      );
+    }
+    if (dto.solicitante_es_contratista !== undefined) {
+      formData.append(
+        "solicitante_es_contratista",
+        dto.solicitante_es_contratista ? "1" : "0",
       );
     }
     if (dto.fecha_solicitud !== undefined) {

@@ -7,7 +7,6 @@ import type {
   DTO_CrearRequerimiento,
   DTO_CrearRequerimientoDetalle,
 } from "../service/atencion.requests";
-import { Premura } from "../../../shared/enums/_generic/premura";
 import type { RES_UnidadMedida } from "../../../service/responses/unidad-medida";
 import { AtencionService } from "../service/atencion.service";
 import type {
@@ -16,8 +15,6 @@ import type {
 } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import { AuxService } from "../../../service/auxiliar.service";
 import type { RES_Producto } from "../../../service/responses/producto";
-type RES_ActivoFijoDisponible = any;
-type RES_Labor = any;
 import type { RES_Empleado } from "../../../service/responses/empleado";
 import type { RES_Contratista } from "../../../service/responses/contratista";
 import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
@@ -25,12 +22,11 @@ import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
 /**
  * Detalle interno del hook. Para edición, cada item trae `id_detalle`
  * (id_requerimiento_almacen_detalle) y `bloqueado` (no editable cuando ya
- * tiene entregas iniciadas).
+ * tiene entregas activas, estado de la entrega = 'Entregado').
  */
 export interface DetalleFormItem extends DTO_CrearRequerimientoDetalle {
   id_detalle?: number;
   bloqueado?: boolean;
-  para_mantenimiento?: boolean;
 }
 
 export type ModoRequerimiento = "crear" | "editar";
@@ -59,55 +55,35 @@ export const useRegistroRequerimiento = ({
   const [submitting, setSubmitting] = useState(false);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingUnidades, setLoadingUnidades] = useState(false);
-  const [loadingLabores, setLoadingLabores] = useState(false);
-  const [loadingMinaData, setLoadingMinaData] = useState(false);
-  const [loadingActivos, setLoadingActivos] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadingCatalogs = loadingProductos || loadingUnidades || loadingLabores;
+  const loadingCatalogs = loadingProductos || loadingUnidades;
 
   // Catálogos
   const [empleados, setEmpleados] = useState<RES_Empleado[]>([]);
   const [contratistas, setContratistas] = useState<RES_Contratista[]>([]);
   const [verContratistas, setVerContratistas] = useState(true);
-  const [labores] = useState<RES_Labor[]>([]);
   const [productos, setProductos] = useState<RES_Producto[]>([]);
   const [unidades, setUnidades] = useState<RES_UnidadMedida[]>([]);
-  const [activos] = useState<RES_ActivoFijoDisponible[]>([]);
   const [evidencias, setEvidencias] = useState<File[]>([]);
 
   // Estado Formulario Cabecera
   const [idAlmacenDestino, setIdAlmacenDestino] = useState<number>(
     idAlmacenFijo || 0,
   );
-  const [idLabor, setIdLabor] = useState<number>(0);
-  const [idEmpleadoSolicitante, setIdEmpleadoSolicitante] = useState<number>(0);
-  const [premura, setPremura] = useState<Premura>(Premura.Normal);
   const [fechaSolicitud, setFechaSolicitud] = useState<Date | null>(new Date());
-  const [fechaEntregaRequerida, setFechaEntregaRequerida] =
-    useState<Date | null>(null);
   /**
-   * Bandera que indica si el usuario modificó manualmente la fecha de entrega
-   * requerida. Si es false, al cambiar `fechaSolicitud` se autocompleta la
-   * fecha de entrega con el mismo valor.
+   * Observación general del requerimiento. La columna fecha_entrega_requerida
+   * ya no existe en la tabla, asi que esta fecha se omite del formulario.
    */
-  const [fechaEntregaManual, setFechaEntregaManual] = useState<boolean>(false);
   const [observacion, setObservacion] = useState("");
 
-  // Autocompletar fecha de entrega con fecha de solicitud (solo si el usuario
-  // no la modificó manualmente)
-  useEffect(() => {
-    if (fechaEntregaManual) return;
-    setFechaEntregaRequerida(fechaSolicitud);
-  }, [fechaSolicitud, fechaEntregaManual]);
-
-  const actualizarFechaEntrega = useCallback(
-    (val: Date | null) => {
-      setFechaEntregaRequerida(val);
-      if (val) setFechaEntregaManual(true);
-    },
-    [],
-  );
+  /**
+   * Solicitante (contratista o empleado) del requerimiento. Si
+   * `verContratistas === true`, el ID apunta a la tabla `contratista`;
+   * en caso contrario apunta a la tabla `empleado`.
+   */
+  const [idEmpleadoSolicitante, setIdEmpleadoSolicitante] = useState<number>(0);
 
   // Estado Formulario Detalle (Item actual)
   const [idProducto, setIdProducto] = useState<number>(0);
@@ -123,8 +99,6 @@ export const useRegistroRequerimiento = ({
    */
   const [calculoInteligente, setCalculoInteligente] = useState<boolean>(false);
   const [comentarioItem, setComentarioItem] = useState("");
-  const [paraMantenimientoItem, setParaMantenimientoItem] = useState(false);
-  const [idActivoFijoDestino, setIdActivoFijoDestino] = useState<number>(0);
 
   // Lista de detalles agregados
   const [detalles, setDetalles] = useState<DetalleFormItem[]>([]);
@@ -138,27 +112,27 @@ export const useRegistroRequerimiento = ({
     if (modo !== "editar" || !requerimientoInicial) return;
 
     setIdAlmacenDestino(requerimientoInicial.id_almacen_destino);
-    setIdLabor((requerimientoInicial as any).id_labor ?? 0);
-    setIdEmpleadoSolicitante(
-      requerimientoInicial.id_contratista_solicitante ??
-        (requerimientoInicial as any).id_empleado_solicitante ??
-        0,
-    );
+    // El "verContratistas" se mantiene como true cuando hay un contratista
+    // guardado. Si no, significa que el solicitante guardado fue un
+    // empleado (o no se seteo). Por defecto, mostramos empleados.
     setVerContratistas(
       Boolean(requerimientoInicial.id_contratista_solicitante),
     );
-    setPremura(((requerimientoInicial as any).premura as Premura) ?? Premura.Normal);
+    // El id del solicitante: si es contratista, el id_contratista_solicitante
+    // trae el id del empleado-contratista. Si no, ese id vive en
+    // id_empleado_registro. En el formulario, ambos se mapean al state
+    // `idEmpleadoSolicitante` que es neutral.
+    const idDelSolicitante = requerimientoInicial.id_contratista_solicitante
+      ? Number(requerimientoInicial.id_contratista_solicitante)
+      : (requerimientoInicial as any).id_empleado_registro
+        ? Number((requerimientoInicial as any).id_empleado_registro)
+        : 0;
+    setIdEmpleadoSolicitante(idDelSolicitante);
     setFechaSolicitud(
       requerimientoInicial.fecha_solicitud
         ? dayjs(requerimientoInicial.fecha_solicitud).toDate()
         : null,
     );
-    setFechaEntregaRequerida(
-      (requerimientoInicial as any).fecha_entrega_requerida
-        ? dayjs((requerimientoInicial as any).fecha_entrega_requerida).toDate()
-        : null,
-    );
-    setFechaEntregaManual(true);
     setObservacion(requerimientoInicial.observacion ?? "");
 
     if (detallesIniciales && detallesIniciales.length > 0) {
@@ -169,7 +143,7 @@ export const useRegistroRequerimiento = ({
           cantidad_solicitada: Number(d.cantidad_solicitada ?? 0),
           contenido_por_presentacion: Number(d.contenido_por_presentacion ?? 1),
           comentario: d.comentario ?? null,
-          para_mantenimiento: Boolean((d as any).para_mantenimiento),
+
           con_magnitud: Number(d.con_magnitud ?? 0) === 1,
           cantidad_items: d.cantidad_items ?? undefined,
           valor_magnitud: d.valor_magnitud ?? undefined,
@@ -186,9 +160,6 @@ export const useRegistroRequerimiento = ({
     const loadCatalogs = async () => {
       setLoadingProductos(true);
       setLoadingUnidades(true);
-      setLoadingLabores(false);
-      setLoadingMinaData(false);
-      setLoadingActivos(false);
       try {
         const [resProd, resUnid, resEmp, resCont] = await Promise.all([
           AuxService.get_productos(),
@@ -356,18 +327,6 @@ export const useRegistroRequerimiento = ({
     [sonUnidadesIdenticas, conversionAutomatica],
   );
 
-  // Auto-seleccionar contratista responsable al elegir una labor
-  useEffect(() => {
-    if (!idLabor || !verContratistas) return;
-    const responsable = contratistas.find((c) => {
-      if (!c.ids_labores_activas) return false;
-      const ids = c.ids_labores_activas.split(",").map(Number);
-      return ids.includes(idLabor);
-    });
-    if (responsable) {
-      setIdEmpleadoSolicitante(responsable.id_contratista);
-    }
-  }, [idLabor, contratistas, verContratistas]);
 
   // Auto-selección de unidad al elegir producto
   useEffect(() => {
@@ -379,8 +338,6 @@ export const useRegistroRequerimiento = ({
     }
     // Al cambiar de producto, reseteamos el comentario y mantenimiento
     setComentarioItem("");
-    setParaMantenimientoItem(false);
-    setIdActivoFijoDestino(0);
     setCalculoInteligente(false);
   }, [idProducto, productos]);
 
@@ -463,18 +420,7 @@ export const useRegistroRequerimiento = ({
       return;
     }
 
-    if (paraMantenimientoItem && !idActivoFijoDestino) {
-      notifyError("Debe seleccionar el equipo destino para mantenimiento");
-      return;
-    }
-
-    let finalComentario = comentarioItem;
-    if (paraMantenimientoItem && idActivoFijoDestino > 0) {
-      const activo = activos.find((a) => a.id_activo === idActivoFijoDestino);
-      finalComentario = activo
-        ? `Para el mantenimiento de ${activo.producto} ${activo.correlativo}`
-        : `Para el mantenimiento de Equipo #${idActivoFijoDestino}`;
-    }
+    const finalComentario = comentarioItem;
 
     // El cálculo inteligente se admite cuando el campo `contenido` puede
     // interpretarse como "magnitud por ítem" (no como factor de conversión).
@@ -526,8 +472,6 @@ export const useRegistroRequerimiento = ({
     setContenido(1);
     setCalculoInteligente(false);
     setComentarioItem("");
-    setParaMantenimientoItem(false);
-    setIdActivoFijoDestino(0);
     setProductoBusqueda("");
     setUnidadBusqueda("");
   }, [
@@ -536,9 +480,6 @@ export const useRegistroRequerimiento = ({
     cantidad,
     contenido,
     comentarioItem,
-    paraMantenimientoItem,
-    idActivoFijoDestino,
-    activos,
     notifyError,
     detalles,
     productos,
@@ -786,11 +727,13 @@ export const useRegistroRequerimiento = ({
       );
 
       try {
+        const idSolicitante =
+          idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null;
         const res = await AtencionService.editarRequerimiento(
           requerimientoInicial.id_requerimiento,
           {
-            id_contratista_solicitante:
-              idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
+            id_contratista_solicitante: idSolicitante,
+            solicitante_es_contratista: verContratistas,
             fecha_solicitud: fechaSolicitud
               ? dayjs(fechaSolicitud).format("YYYY-MM-DD")
               : undefined,
@@ -824,9 +767,15 @@ export const useRegistroRequerimiento = ({
     }
 
     // ============== MODO CREAR ==============
+    // El "solicitante" puede ser un contratista o un empleado (viven en
+    // la misma tabla empleado). El id viaja en `id_contratista_solicitante`
+    // y el flag `solicitante_es_contratista` indica al backend en que
+    // columna de la BD guardarlo.
+    const idSolicitante =
+      idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null;
     const dto: DTO_CrearRequerimiento = {
-      id_contratista_solicitante:
-        idEmpleadoSolicitante > 0 ? idEmpleadoSolicitante : null,
+      id_contratista_solicitante: idSolicitante,
+      solicitante_es_contratista: verContratistas,
       id_almacen_destino: idAlmacenDestino,
       fecha_solicitud: fechaSolicitud
         ? dayjs(fechaSolicitud).format("YYYY-MM-DD")
@@ -889,12 +838,7 @@ export const useRegistroRequerimiento = ({
     requerimientoInicial,
     detalles,
     detallesIniciales,
-    verContratistas,
-    idEmpleadoSolicitante,
-    idLabor,
-    premura,
     fechaSolicitud,
-    fechaEntregaRequerida,
     observacion,
     evidencias,
     onSuccess,
@@ -906,7 +850,6 @@ export const useRegistroRequerimiento = ({
   return {
     mode: { modo },
     state: {
-      labores,
       productos,
       unidades,
       setUnidades,
@@ -914,20 +857,14 @@ export const useRegistroRequerimiento = ({
       setEvidencias,
       idAlmacenDestino,
       setIdAlmacenDestino,
-      idLabor,
-      setIdLabor,
-      idEmpleadoSolicitante,
-      setIdEmpleadoSolicitante,
       empleados,
       contratistas,
       verContratistas,
       setVerContratistas,
-      premura,
-      setPremura,
+      idEmpleadoSolicitante,
+      setIdEmpleadoSolicitante,
       fechaSolicitud,
       setFechaSolicitud,
-      fechaEntregaRequerida,
-      setFechaEntregaRequerida: actualizarFechaEntrega,
       observacion,
       setObservacion,
       // Item
@@ -943,16 +880,11 @@ export const useRegistroRequerimiento = ({
       setCalculoInteligente: activarCalculoInteligente,
       comentarioItem,
       setComentarioItem,
-      paraMantenimientoItem,
-      setParaMantenimientoItem,
-      idActivoFijoDestino,
-      setIdActivoFijoDestino,
       productoBusqueda,
       setProductoBusqueda,
       unidadBusqueda,
       setUnidadBusqueda,
-      activos,
-      detalles,
+        detalles,
     },
     derived: {
       sonUnidadesIdenticas,
@@ -972,9 +904,6 @@ export const useRegistroRequerimiento = ({
     status: {
       submitting,
       loadingCatalogs,
-      loadingLabores,
-      loadingMinaData,
-      loadingActivos,
       error,
     },
     actions: {

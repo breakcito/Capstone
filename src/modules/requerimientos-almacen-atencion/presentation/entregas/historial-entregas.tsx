@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Loader,
   Stack,
   Text,
   Badge,
@@ -8,6 +7,8 @@ import {
   Group,
   Collapse,
   UnstyledButton,
+  ActionIcon,
+  Tooltip,
 } from "@mantine/core";
 import dayjs from "dayjs";
 import { useHistorialEntregasRequerimiento } from "../../hooks/useHistorialEntregasRequerimiento";
@@ -19,24 +20,41 @@ import {
   CubeIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { formatNumber } from "../../../../shared/functions/formatNumber";
 import { ArchivoCard } from "../../../../presentation/utils/archivo/archivo-card";
 import { PaperClipIcon } from "@heroicons/react/24/outline";
 import { Estado_EntregaRequerimiento } from "../../../../shared/enums/requerimiento-almacen/requerimiento-entrega";
+import { ModalAnularEntrega } from "../components/ModalAnularEntrega";
 
 interface HistorialProps {
   idRequerimiento: number;
+  /**
+   * Callback que se llama cuando una entrega fue anulada exitosamente.
+   * La pagina padre lo usa para refrescar el requerimiento completo
+   * (porque la entrega afecta la cantidad_entregada_base del detalle).
+   */
+  onEntregaAnulada?: (idEntrega: number) => void;
 }
 
 export const HistorialEntregasRequerimiento = ({
   idRequerimiento,
+  onEntregaAnulada,
 }: HistorialProps) => {
   const { loading, historial, error } =
     useHistorialEntregasRequerimiento(idRequerimiento);
 
   // Mantiene el estado de qué entregas están expandidas. Por defecto, expandir la primera.
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
+
+  // Modal de anulacion de entrega
+  const [entregaAAnular, setEntregaAAnular] = useState<{
+    id_requerimiento_almacen_entrega: number;
+    correlativo: string;
+    estado: string;
+  } | null>(null);
+  const [openedAnularEntrega, setOpenedAnularEntrega] = useState(false);
 
   const toggleExpand = (id: number) => {
     setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -47,19 +65,38 @@ export const HistorialEntregasRequerimiento = ({
     return index === 0; // Abre la primera por defecto
   };
 
-  if (loading)
+  // Skeleton mientras carga: muestra 3 placeholders animados con la
+  // misma forma que una tarjeta de entrega, asi el usuario sabe que
+  // se estan trayendo los datos.
+  if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader color="indigo" size="lg" />
-      </div>
+      <Stack gap="md" className="pt-2 px-2" data-testid="historial-skeleton">
+        {[0, 1, 2].map((i) => (
+          <Paper
+            key={i}
+            radius="xl"
+            className="bg-zinc-900/30 border border-zinc-800/80 p-4 shrink-0"
+          >
+            <div className="p-5 sm:p-6 flex items-center gap-4">
+              <div className="p-3 bg-zinc-800/50 rounded-2xl border border-zinc-700/50 shrink-0">
+                <div className="w-6 h-6 bg-zinc-700/60 rounded animate-pulse" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-32 bg-zinc-700/60 rounded animate-pulse" />
+                <div className="h-2 w-48 bg-zinc-800/60 rounded animate-pulse" />
+              </div>
+            </div>
+          </Paper>
+        ))}
+      </Stack>
     );
+  }
 
-  if (error)
-    return (
-      <Text c="red" ta="center">
-        {error}
-      </Text>
-    );
+  // Orden importante: primero verificamos el empty state (caso normal
+  // cuando no hay entregas). Solo si el error es real Y todavia no
+  // hay historial para mostrar, mostramos el mensaje de error. Asi un
+  // falso positivo del catch (por CORS, timeout, etc.) no tapa el
+  // empty state cuando el backend en realidad respondio bien.
 
   if (historial.length === 0)
     return (
@@ -69,6 +106,21 @@ export const HistorialEntregasRequerimiento = ({
         </div>
         <Text c="zinc.5" size="sm" fw={600}>
           No se han registrado entregas para este requerimiento.
+        </Text>
+        <Text c="zinc.6" size="xs">
+          Cuando registres una entrega, aparecera aqui.
+        </Text>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="py-10 text-center flex flex-col items-center gap-3">
+        <Text c="dimmed" size="sm" fw={600}>
+          {error}
+        </Text>
+        <Text c="zinc.6" size="xs">
+          Si el problema persiste, contacte al administrador.
         </Text>
       </div>
     );
@@ -126,6 +178,32 @@ export const HistorialEntregasRequerimiento = ({
                       >
                         {h.estado}
                       </Badge>
+                      {h.estado === Estado_EntregaRequerimiento.Entregado && (
+                        <Tooltip
+                          label="Anular entrega y reintegrar stock al lote"
+                          position="top"
+                          withArrow
+                        >
+                          <ActionIcon
+                            size="xs"
+                            color="red"
+                            variant="light"
+                            radius="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEntregaAAnular({
+                                id_requerimiento_almacen_entrega:
+                                  h.id_requerimiento_almacen_entrega,
+                                correlativo: h.correlativo,
+                                estado: h.estado,
+                              });
+                              setOpenedAnularEntrega(true);
+                            }}
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
                     </Group>
                     <Group gap="xs" className="text-zinc-400" wrap="nowrap">
                       <Group gap="xs" wrap="nowrap">
@@ -342,6 +420,22 @@ export const HistorialEntregasRequerimiento = ({
           </Paper>
         );
       })}
+
+      <ModalAnularEntrega
+        opened={openedAnularEntrega}
+        close={() => {
+          setOpenedAnularEntrega(false);
+          setEntregaAAnular(null);
+        }}
+        entrega={entregaAAnular}
+        onAnulada={(idEntrega) => {
+          setOpenedAnularEntrega(false);
+          setEntregaAAnular(null);
+          if (onEntregaAnulada) {
+            onEntregaAnulada(idEntrega);
+          }
+        }}
+      />
     </Stack>
   );
 };

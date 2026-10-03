@@ -11,8 +11,10 @@ import type {
   RES_RequerimientoAlmacen,
 } from "../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import { AuxService } from "../../../service/auxiliar.service";
+// Tipos auxiliares para catalogos que el hook no usa en detalle pero
+// mantiene en el estado para compatibilidad.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RES_ActivoFijoDisponible = any;
-type RES_LoteMineral = any;
 enum TipoBien {
   Producto = "Producto",
   ActivoFijo = "Activo Fijo",
@@ -36,8 +38,7 @@ interface UseRegistrarEntregaBatchProps {
 }
 
 export interface DestinoItem {
-  tipo: "mantenimiento" | "produccion" | "";
-  id_activo_fijo_destino?: number | null;
+  tipo: "produccion" | "";
   id_lote_mineral?: number | null;
 }
 
@@ -62,7 +63,6 @@ export const useRegistrarEntregaBatch = ({
     [],
   );
   const [allActivos, setAllActivos] = useState<RES_ActivoFijoDisponible[]>([]);
-  const [lotesMineral, setLotesMineral] = useState<RES_LoteMineral[]>([]);
   const [entregaCantidadesActivos, setEntregaCantidadesActivos] = useState<
     Record<number, Record<number, number>>
   >({});
@@ -118,7 +118,7 @@ export const useRegistrarEntregaBatch = ({
     [selectedDetalles],
   );
 
-  /** Activos fijos: ya tienen id_activo_fijo_destino asignado desde el requerimiento */
+  /** Activos fijos: items cuyo producto es de tipo bien = 'Activo Fijo'. */
   const detallesActivoFijo = useMemo(
     () => selectedDetalles.filter((d) => d.tipo_bien === TipoBien.ActivoFijo),
     [selectedDetalles],
@@ -155,16 +155,9 @@ export const useRegistrarEntregaBatch = ({
         ]);
         const resActivos = { success: true, data: [] };
         const resAllActivos = { success: true, data: [] };
-        const resLotesMineral = { success: true, data: [] };
 
         if (cancelled) return;
 
-        const mineralBatches =
-          resLotesMineral.success && resLotesMineral.data
-            ? resLotesMineral.data
-            : [];
-        const firstLoteMineralId =
-          mineralBatches.length > 0 ? (mineralBatches[0] as any).id_lote_mineral : null;
         const initialDestinos: Record<string, DestinoItem> = {};
 
         if (resLotes.success) {
@@ -181,30 +174,18 @@ export const useRegistrarEntregaBatch = ({
           detallesConLote.forEach((d) => {
             initial[d.id_requerimiento_almacen_detalle] = {};
 
-            const isMantenimiento =
-              Boolean(d.para_mantenimiento) &&
-              Boolean(d.producto_para_mantenimiento);
-            const defaultActivoFijoId = d.id_activo_fijo_destino || null;
-
+            // La tabla requerimiento_almacen_detalle ya no tiene
+            // para_mantenimiento / id_activo_fijo_destino ni
+            // id_lote_mineral: el destino es siempre el lote del que
+            // se descuenta stock, sin requerir un lote de mineral
+            // adicional. Por eso el destino es vacio.
             castedLotes
               .filter((l) => l.id_producto === d.id_producto)
               .forEach((l) => {
                 initial[d.id_requerimiento_almacen_detalle][l.id_lote] = 0;
 
                 const key = `${d.id_requerimiento_almacen_detalle}_lote_${l.id_lote}`;
-                if (isMantenimiento) {
-                  initialDestinos[key] = {
-                    tipo: "mantenimiento",
-                    id_activo_fijo_destino: defaultActivoFijoId,
-                    id_lote_mineral: null,
-                  };
-                } else {
-                  initialDestinos[key] = {
-                    tipo: "produccion",
-                    id_activo_fijo_destino: null,
-                    id_lote_mineral: firstLoteMineralId,
-                  };
-                }
+                initialDestinos[key] = { tipo: "" };
               });
           });
           setEntregaCantidades(initial);
@@ -218,11 +199,6 @@ export const useRegistrarEntregaBatch = ({
           detallesActivoFijo.forEach((d) => {
             initialActivos[d.id_requerimiento_almacen_detalle] = {};
 
-            const isMantenimiento =
-              Boolean(d.para_mantenimiento) &&
-              Boolean(d.producto_para_mantenimiento);
-            const defaultActivoFijoId = d.id_activo_fijo_destino || null;
-
             resActivos.data
               .filter(
                 (a: RES_ActivoFijoDisponible) =>
@@ -234,19 +210,7 @@ export const useRegistrarEntregaBatch = ({
                 ] = 0;
 
                 const key = `${d.id_requerimiento_almacen_detalle}_activo_${a.id_activo}`;
-                if (isMantenimiento) {
-                  initialDestinos[key] = {
-                    tipo: "mantenimiento",
-                    id_activo_fijo_destino: defaultActivoFijoId,
-                    id_lote_mineral: null,
-                  };
-                } else {
-                  initialDestinos[key] = {
-                    tipo: "produccion",
-                    id_activo_fijo_destino: null,
-                    id_lote_mineral: firstLoteMineralId,
-                  };
-                }
+                initialDestinos[key] = { tipo: "" };
               });
           });
           setEntregaCantidadesActivos(initialActivos);
@@ -256,10 +220,6 @@ export const useRegistrarEntregaBatch = ({
 
         if (resAllActivos.success && resAllActivos.data) {
           setAllActivos(resAllActivos.data);
-        }
-
-        if (resLotesMineral.success && resLotesMineral.data) {
-          setLotesMineral(resLotesMineral.data);
         }
 
         if (resEmps.success) {
@@ -277,8 +237,17 @@ export const useRegistrarEntregaBatch = ({
         if (resContratistas.success && resContratistas.data) {
           setContratistas(
             resContratistas.data.map((c) => ({
-              value: c.id_contratista.toString(),
-              label: c.nombre_completo ?? "",
+              // El endpoint /api/aux/contratistas devuelve id_empleado
+              // (los contratistas viven en la tabla empleado con
+              // es_contratista=1). Hacemos fallback a id_contratista /
+              // idContratista para compatibilidad con respuestas viejas.
+              value: (
+                c.id_empleado ?? c.id_contratista ?? c.idContratista ?? 0
+              ).toString(),
+              label:
+                c.nombre_completo ??
+                `${c.nombre ?? ""} ${c.apellido ?? ""}`.trim() ??
+                "",
             })),
           );
         }
@@ -303,25 +272,45 @@ export const useRegistrarEntregaBatch = ({
     detallesActivoFijo,
   ]);
 
-  // Auto-seleccionar receptor basado en el solicitante
+  // Auto-seleccionar receptor basado en el solicitante.
+  // - Si el solicitante es un contratista (id_contratista_solicitante
+  //   distinto de null), autocompletamos el Select de contratistas.
+  // - Si el solicitante es un empleado (id_contratista_solicitante es
+  //   null y el id vive en id_empleado_registro), autocompletamos el
+  //   Select de empleados.
+  //
+  // El id que recibimos es SIEMPRE un id_empleado (porque contratistas
+  // y empleados viven en la misma tabla). El Select de empleados filtra
+  // al usuario logueado, asi que si el solicitante es el mismo logueado
+  // no aparecera en la lista. En ese caso, forzamos que SI aparezca.
   useEffect(() => {
     if (hasAutoSelected) return;
 
     if (idContratistaSolicitante && contratistas.length > 0) {
-      const exists = contratistas.some(
-        (c) => c.value === idContratistaSolicitante.toString(),
-      );
+      const idStr = idContratistaSolicitante.toString();
+      const exists = contratistas.some((c) => c.value === idStr);
       if (exists) {
-        setIdContratistaRecibe(idContratistaSolicitante.toString());
+        setIdContratistaRecibe(idStr);
         setEsContratistaRecibe(true);
         setHasAutoSelected(true);
       }
     } else if (idEmpleadoSolicitante && empleados.length > 0) {
-      const exists = empleados.some(
-        (e) => e.value === idEmpleadoSolicitante.toString(),
-      );
+      const idStr = idEmpleadoSolicitante.toString();
+      // El solicitante-empleado puede ser el mismo usuario logueado,
+      // que esta excluido de la lista de "empleados que reciben" (porque
+      // no tiene sentido que se reciba a si mismo). En ese caso
+      // igualmente lo dejamos seleccionado via prop controlada.
+      const exists = empleados.some((e) => e.value === idStr);
       if (exists) {
-        setIdEmpleadoRecibe(idEmpleadoSolicitante.toString());
+        setIdEmpleadoRecibe(idStr);
+        setEsContratistaRecibe(false);
+        setHasAutoSelected(true);
+      } else {
+        // El solicitante no esta en la lista (probablemente es el
+        // propio logueado). Lo seteamos igual: el Select lo tratara
+        // como "no listado" pero la relacion se mantiene en el
+        // formulario.
+        setIdEmpleadoRecibe(idStr);
         setEsContratistaRecibe(false);
         setHasAutoSelected(true);
       }
@@ -457,10 +446,6 @@ export const useRegistrarEntregaBatch = ({
     [lotes, handleCantChange],
   );
 
-  const firstLoteMineralId = useMemo(() => {
-    return lotesMineral.length > 0 ? lotesMineral[0].id_lote_mineral : null;
-  }, [lotesMineral]);
-
   const handleDestinoChange = useCallback(
     (key: string, field: string, value: string | number | null) => {
       setDestinosMap((prev) => {
@@ -470,17 +455,11 @@ export const useRegistrarEntregaBatch = ({
           [key]: {
             ...current,
             [field]: value,
-            // Reset other fields if type changes
-            ...(field === "tipo" && {
-              id_activo_fijo_destino: null,
-              id_lote_mineral:
-                value === "produccion" ? firstLoteMineralId : null,
-            }),
           } as DestinoItem,
         };
       });
     },
-    [firstLoteMineralId],
+    [],
   );
 
   const lotesPorProducto = useMemo(() => {
@@ -519,66 +498,20 @@ export const useRegistrarEntregaBatch = ({
     }
     setError("");
 
-    // Validar destinos para items seleccionados
+    // Validar destinos para items seleccionados.
+    // Antes habia una validacion que pedia un "lote de mineral destino"
+    // para todo item con tipo=produccion. Esa logica era de un modelo
+    // anterior (con tabla 'lote_mineral') que ya no existe: la nueva
+    // estructura de requerimiento_almacen_detalle NO tiene
+    // id_lote_mineral, ni para_mantenimiento, ni id_activo_fijo_destino.
+    // Validar eso era un bug (p.ej. GUANTES, que es EPPs, no es mineral
+    // y aun asi se le pedia lote de mineral).
+    //
+    // Si en el futuro se agrega un campo 'tipo_destino_lote' o
+    // 'requiere_lote_mineral' al detalle, la validacion se agrega de
+    // vuelta aqui. Mientras tanto, los items se entregan directo al lote
+    // y eso es suficiente.
     let validationError = "";
-
-    // Activos fijos
-    for (const [idDet, activosMap] of Object.entries(
-      entregaCantidadesActivos,
-    )) {
-      const idDetalleReq = Number(idDet);
-      const detail = selectedDetalles.find(
-        (d) => d.id_requerimiento_almacen_detalle === idDetalleReq,
-      );
-      if (!detail) continue;
-
-      for (const [idAct, cant] of Object.entries(activosMap)) {
-        if (cant > 0) {
-          const numIdActivo = Number(idAct);
-          const key = `${idDetalleReq}_activo_${numIdActivo}`;
-          const dest = destinosMap[key] || { tipo: "" };
-
-          if (dest.tipo === "mantenimiento" && !dest.id_activo_fijo_destino) {
-            validationError = `Debe seleccionar el equipo destino para el activo fijo correlativo "${detail.producto}"`;
-            break;
-          }
-          if (dest.tipo === "produccion" && !dest.id_lote_mineral) {
-            validationError = `Debe seleccionar el lote de mineral destino para el activo fijo correlativo "${detail.producto}"`;
-            break;
-          }
-        }
-      }
-      if (validationError) break;
-    }
-
-    if (!validationError) {
-      // Productos con lote
-      for (const [idDet, lotesMap] of Object.entries(entregaCantidades)) {
-        const idDetalleReq = Number(idDet);
-        const detail = selectedDetalles.find(
-          (d) => d.id_requerimiento_almacen_detalle === idDetalleReq,
-        );
-        if (!detail) continue;
-
-        for (const [idLot, cant] of Object.entries(lotesMap)) {
-          if (cant > 0) {
-            const numIdLote = Number(idLot);
-            const key = `${idDetalleReq}_lote_${numIdLote}`;
-            const dest = destinosMap[key] || { tipo: "" };
-
-            if (dest.tipo === "mantenimiento" && !dest.id_activo_fijo_destino) {
-              validationError = `Debe seleccionar el equipo destino para el producto "${detail.producto}"`;
-              break;
-            }
-            if (dest.tipo === "produccion" && !dest.id_lote_mineral) {
-              validationError = `Debe seleccionar el lote de mineral destino para el producto "${detail.producto}"`;
-              break;
-            }
-          }
-        }
-        if (validationError) break;
-      }
-    }
 
     if (validationError) {
       setError(validationError);
@@ -599,8 +532,6 @@ export const useRegistrarEntregaBatch = ({
       Object.entries(activosMap).forEach(([idAct, cant]) => {
         if (cant > 0) {
           const numIdActivo = Number(idAct);
-          const key = `${idDetalleReq}_activo_${numIdActivo}`;
-          const dest = destinosMap[key] || { tipo: "" };
 
           detallesParaApi.push({
             id_requerimiento_almacen_detalle: idDetalleReq,
@@ -608,14 +539,6 @@ export const useRegistrarEntregaBatch = ({
             cantidad_base: cant,
             cantidad_lote: cant,
             cantidad_requerimiento: cant,
-            para_mantenimiento: dest.tipo === "mantenimiento",
-            para_produccion: dest.tipo === "produccion",
-            id_activo_fijo_destino:
-              dest.tipo === "mantenimiento"
-                ? dest.id_activo_fijo_destino
-                : null,
-            id_lote_mineral:
-              dest.tipo === "produccion" ? dest.id_lote_mineral : null,
           });
         }
       });
@@ -640,23 +563,12 @@ export const useRegistrarEntregaBatch = ({
           const cLote = cBase / equivLote;
           const cReq = cBase / detail.equivReq;
 
-          const key = `${idDetalleReq}_lote_${numIdLote}`;
-          const dest = destinosMap[key] || { tipo: "" };
-
           detallesParaApi.push({
             id_requerimiento_almacen_detalle: idDetalleReq,
             id_lote_producto: numIdLote,
             cantidad_base: cBase,
             cantidad_lote: cLote,
             cantidad_requerimiento: cReq,
-            para_mantenimiento: dest.tipo === "mantenimiento",
-            para_produccion: dest.tipo === "produccion",
-            id_activo_fijo_destino:
-              dest.tipo === "mantenimiento"
-                ? dest.id_activo_fijo_destino
-                : null,
-            id_lote_mineral:
-              dest.tipo === "produccion" ? dest.id_lote_mineral : null,
           });
         }
       });
@@ -671,13 +583,18 @@ export const useRegistrarEntregaBatch = ({
     try {
       const res = await AtencionService.registrarEntrega({
         id_requerimiento: idRequerimiento,
-        id_empleado_recibe:
-          !esContratistaRecibe && idEmpleadoRecibe
-            ? Number(idEmpleadoRecibe)
-            : null,
-        id_contratista_recibe:
-          esContratistaRecibe && idContratistaRecibe
+        // El receptor es siempre un id_empleado (los contratistas viven
+        // en la tabla empleado con es_contratista=1). Asi no necesitamos
+        // un campo separado: si es contratista, el id_empleado_recibe
+        // apunta a su fila en empleado. El backend distingue via
+        // receptor_es_contratista (o lo puede hacer con un JOIN si
+        // expone ese flag).
+        id_empleado_recibe: esContratistaRecibe
+          ? idContratistaRecibe
             ? Number(idContratistaRecibe)
+            : null
+          : idEmpleadoRecibe
+            ? Number(idEmpleadoRecibe)
             : null,
         fecha_entrega: dayjs().format("YYYY-MM-DD HH:mm:ss"),
         observacion,
@@ -785,23 +702,11 @@ export const useRegistrarEntregaBatch = ({
   const buildSalidaItems = useCallback((): SalidaAlmacenItem[] => {
     const items: SalidaAlmacenItem[] = [];
 
-    const resolveDestinoDetalle = (dest: DestinoItem): string | null => {
-      if (dest.tipo === "mantenimiento" && dest.id_activo_fijo_destino) {
-        const d = allActivos.find(
-          (a) => a.id_activo === dest.id_activo_fijo_destino,
-        );
-        return d
-          ? `${d.correlativo} - ${d.producto}`
-          : `Activo #${dest.id_activo_fijo_destino}`;
-      }
-      if (dest.tipo === "produccion" && dest.id_lote_mineral) {
-        const d = lotesMineral.find(
-          (l) => l.id_lote_mineral === dest.id_lote_mineral,
-        );
-        return d
-          ? d.descripcion || d.codigo || `Lote #${dest.id_lote_mineral}`
-          : `Lote #${dest.id_lote_mineral}`;
-      }
+    const resolveDestinoDetalle = (_dest: DestinoItem): string | null => {
+      // La logica de "destino" dejo de aplicar para el modelo actual:
+      // el detalle se entrega directo al lote del que se descuenta stock,
+      // sin requerir un lote de mineral adicional. Mantenemos la firma
+      // por compatibilidad con buildSalidaItems pero devolvemos null.
       return null;
     };
 
@@ -883,7 +788,6 @@ export const useRegistrarEntregaBatch = ({
     lotes,
     activosFijos,
     allActivos,
-    lotesMineral,
     destinosMap,
   ]);
 
@@ -894,7 +798,6 @@ export const useRegistrarEntregaBatch = ({
     lotesPorProducto,
     activosFijosPorProducto,
     allActivos,
-    lotesMineral,
     entregaCantidades,
     entregaCantidadesActivos,
     destinosMap,

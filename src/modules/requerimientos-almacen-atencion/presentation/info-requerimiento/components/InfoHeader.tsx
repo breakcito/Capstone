@@ -126,15 +126,15 @@ export const InfoHeader = ({
               </Button>
             ) : (
               <Tooltip
-                label="No hay detalles sin entrega iniciada"
+                label="Todos los detalles tienen entregas iniciadas. Para editar la cabecera o los detalles, primero anula las entregas asociadas."
                 position="top"
                 withArrow
                 multiline
-                w={220}
+                w={280}
               >
                 <Text size="xs" c="zinc.5" fs="italic">
-                  Todos los items tienen entregas iniciadas; ya no se puede
-                  editar la cabecera ni los detalles.
+                  Hay entregas iniciadas; no se puede editar la cabecera
+                  ni los detalles hasta anular las entregas.
                 </Text>
               </Tooltip>
             )}

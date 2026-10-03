@@ -391,6 +391,10 @@ export const useGestionAtencion = ({
 
     if (itemsAtendibles.length === 0) return 0;
 
+    // Promedio del porcentaje_progreso de cada detalle atendible. El
+    // backend ahora calcula este campo en SQL (ver Model::get_detalles),
+    // asi que ya no tenemos que sacar el porcentaje a mano desde
+    // cantidad_entregada_base / cantidad_solicitada_base.
     const sumaProgreso = itemsAtendibles.reduce((acc, item) => {
       return acc + Number(item.porcentaje_progreso || 0);
     }, 0);

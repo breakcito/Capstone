@@ -36,7 +36,6 @@ export const RegistrarEntrega = ({
     loading,
     selectedDetalles,
     allActivos,
-    lotesMineral,
     lotesPorProducto,
     activosFijosPorProducto,
     entregaCantidades,
@@ -136,7 +135,6 @@ export const RegistrarEntrega = ({
             lotesPorProducto={lotesPorProducto}
             activosFijosPorProducto={activosFijosPorProducto}
             allActivos={allActivos}
-            lotesMineral={lotesMineral}
             entregaCantidades={entregaCantidades}
             entregaCantidadesActivos={entregaCantidadesActivos}
             destinosMap={destinosMap}
