@@ -18,6 +18,7 @@ import type { RES_Producto } from "../../../service/responses/producto";
 import type { RES_Empleado } from "../../../service/responses/empleado";
 import type { RES_Contratista } from "../../../service/responses/contratista";
 import { getCoincidencias } from "../../../shared/functions/get-coincidencias";
+import { Estado_Requerimiento } from "../../../shared/enums/requerimiento-almacen/requerimiento";
 
 /**
  * Detalle interno del hook. Para edición, cada item trae `id_detalle`
@@ -667,6 +668,13 @@ export const useRegistroRequerimiento = ({
     if (modo === "editar") {
       if (!requerimientoInicial) {
         setError("No hay requerimiento inicial para editar");
+        setSubmitting(false);
+        return;
+      }
+
+      if (requerimientoInicial.estado === Estado_Requerimiento.Anulado) {
+        setError("No se puede editar un requerimiento anulado");
+        notifyError("No se puede editar un requerimiento anulado");
         setSubmitting(false);
         return;
       }

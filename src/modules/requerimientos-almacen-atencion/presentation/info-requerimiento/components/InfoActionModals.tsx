@@ -6,7 +6,10 @@ import {
 import { ModalEstandar } from "../../../../../presentation/utils/modal-estandar";
 import { ReqDetalleTrazabilidad } from "./../detalle/detalle-log";
 import { HistorialEntregasRequerimiento } from "../../entregas/historial-entregas";
-import { Estado_RequerimientoDetalle } from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
+import {
+  Estado_Requerimiento,
+  Estado_RequerimientoDetalle,
+} from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
 import type { RES_RequerimientoAlmacen } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
 import type { DetalleRequerimientoExtendido } from "../../../service/atencion.responses";
 import type { RES_Trazabilidad } from "../../../../../service/responses/_generic/trazabilidad";
@@ -175,6 +178,7 @@ export const InfoActionModals = ({
       >
         <HistorialEntregasRequerimiento
           idRequerimiento={requerimiento.id_requerimiento}
+          readOnly={requerimiento.estado === Estado_Requerimiento.Anulado}
         />
       </ModalEstandar>
     </>

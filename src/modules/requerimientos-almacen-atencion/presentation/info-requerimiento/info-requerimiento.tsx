@@ -1,7 +1,9 @@
-import { Loader, Stack } from "@mantine/core";
+import { Loader, Stack, Paper, Text } from "@mantine/core";
 import { useMemo, useState } from "react";
 import { useGestionAtencion } from "../../hooks/useGestionAtencion";
 import type { RES_RequerimientoAlmacen } from "../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
+import { Estado_Requerimiento } from "../../../../shared/enums/requerimiento-almacen/requerimiento";
+import { NoSymbolIcon } from "@heroicons/react/24/outline";
 import { InfoHeader } from "./components/InfoHeader";
 import { InfoStats } from "./components/InfoStats";
 import { InfoProgress } from "./components/InfoProgress";
@@ -22,6 +24,8 @@ export const InfoRequerimiento = ({
   idAlmacen,
   onSuccess,
 }: InfoRequerimientoProps) => {
+  const isAnulado = requerimiento.estado === Estado_Requerimiento.Anulado;
+
   const {
     loading,
     detalles,
@@ -68,12 +72,15 @@ export const InfoRequerimiento = ({
     patchDetallesLocales,
   } = useGestionAtencion({
     idRequerimiento: requerimiento.id_requerimiento,
+    isAnulado,
     onSuccess,
   });
 
   const puedeEditar = useMemo(
-    () => detalles.some((d) => Number(d.cantidad_entregada_base ?? 0) === 0),
-    [detalles],
+    () =>
+      !isAnulado &&
+      detalles.some((d) => Number(d.cantidad_entregada_base ?? 0) === 0),
+    [detalles, isAnulado],
   );
 
   const [openedEditar, setOpenedEditar] = useState(false);
@@ -90,10 +97,31 @@ export const InfoRequerimiento = ({
 
   return (
     <Stack gap="xl" className="pb-10">
+      {isAnulado && (
+        <Paper
+          p="md"
+          radius="lg"
+          className="bg-red-500/10 border border-red-500/30 text-red-200 flex items-center gap-3.5 mx-2"
+        >
+          <div className="p-2 bg-red-500/20 rounded-lg shrink-0">
+            <NoSymbolIcon className="size-6 text-red-400" />
+          </div>
+          <div>
+            <Text size="sm" fw={800} className="text-red-200 tracking-tight">
+              Requerimiento Anulado · Modo Solo Lectura
+            </Text>
+            <Text size="xs" className="text-red-300/80 mt-0.5">
+              Este requerimiento se encuentra anulado. No se permiten ediciones, aprobaciones, rechazos ni registro de entregas.
+            </Text>
+          </div>
+        </Paper>
+      )}
+
       <InfoHeader
         requerimiento={requerimiento}
         puedeEditar={puedeEditar}
-        onEditar={() => setOpenedEditar(true)}
+        isAnulado={isAnulado}
+        onEditar={() => !isAnulado && setOpenedEditar(true)}
       />
 
       <InfoStats requerimiento={requerimiento} />
@@ -102,6 +130,7 @@ export const InfoRequerimiento = ({
 
       <InfoItemsTable
         detalles={detalles}
+        isAnulado={isAnulado}
         selectedItemsIds={selectedItemsIds}
         toggleItemSelection={toggleItemSelection}
         isAllEligibleSelected={isAllEligibleSelected}
@@ -151,7 +180,7 @@ export const InfoRequerimiento = ({
       />
 
       <ModalEstandar
-        opened={openedEditar}
+        opened={!isAnulado && openedEditar}
         close={() => setOpenedEditar(false)}
         title={`Editar Requerimiento ${requerimiento.correlativo}`}
         size="65%"
@@ -171,7 +200,7 @@ export const InfoRequerimiento = ({
       </ModalEstandar>
 
       <ModalEstandar
-        opened={openedEntregaBatch}
+        opened={!isAnulado && openedEntregaBatch}
         close={closeEntregaBatch}
         title={`Registrar Entrega · ${requerimiento.correlativo}`}
         size="75rem"

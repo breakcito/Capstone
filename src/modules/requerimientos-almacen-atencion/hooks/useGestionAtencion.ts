@@ -11,11 +11,13 @@ import {
 
 interface UseGestionAtencionProps {
   idRequerimiento: number;
+  isAnulado?: boolean;
   onSuccess: (ids?: number[]) => void;
 }
 
 export const useGestionAtencion = ({
   idRequerimiento,
+  isAnulado = false,
   onSuccess,
 }: UseGestionAtencionProps) => {
   const [loading, setLoading] = useState(true);
@@ -53,22 +55,25 @@ export const useGestionAtencion = ({
   const [idsParaAccionMasiva, setIdsParaAccionMasiva] = useState<number[]>([]);
 
   const toggleItemSelection = useCallback((id: number) => {
+    if (isAnulado) return;
     setSelectedItemsIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
-  }, []);
+  }, [isAnulado]);
 
   const toggleSeleccionMasiva = useCallback((id: number) => {
+    if (isAnulado) return;
     setIdsParaAccionMasiva((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
-  }, []);
+  }, [isAnulado]);
 
   const deseleccionarMasivos = useCallback(() => {
     setIdsParaAccionMasiva([]);
   }, []);
 
   const isAllPendingSelected = useMemo(() => {
+    if (isAnulado) return false;
     const pendientes = detalles.filter(
       (d) =>
         d.estado === Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
@@ -76,9 +81,13 @@ export const useGestionAtencion = ({
     return (
       pendientes.length > 0 && idsParaAccionMasiva.length === pendientes.length
     );
-  }, [detalles, idsParaAccionMasiva]);
+  }, [detalles, idsParaAccionMasiva, isAnulado]);
 
   const seleccionarTodoLoPendiente = useCallback(() => {
+    if (isAnulado) {
+      setIdsParaAccionMasiva([]);
+      return;
+    }
     if (isAllPendingSelected) {
       setIdsParaAccionMasiva([]);
     } else {
@@ -91,39 +100,46 @@ export const useGestionAtencion = ({
         pendientes.map((d) => d.id_requerimiento_almacen_detalle),
       );
     }
-  }, [detalles, isAllPendingSelected]);
+  }, [detalles, isAllPendingSelected, isAnulado]);
 
   const deselectAllItems = useCallback(() => {
     setSelectedItemsIds([]);
   }, []);
 
   const eligibleForDelivery = useMemo(() => {
+    if (isAnulado) return [];
     return detalles.filter(
       (d) =>
         d.estado === Estado_RequerimientoDetalle.Aprobado.toString() ||
         d.estado === Estado_RequerimientoDetalle.EnDespacho.toString(),
     );
-  }, [detalles]);
+  }, [detalles, isAnulado]);
 
   const isAllEligibleSelected = useMemo(() => {
+    if (isAnulado) return false;
     return (
       eligibleForDelivery.length > 0 &&
       eligibleForDelivery.every((d) =>
         selectedItemsIds.includes(d.id_requerimiento_almacen_detalle),
       )
     );
-  }, [eligibleForDelivery, selectedItemsIds]);
+  }, [eligibleForDelivery, selectedItemsIds, isAnulado]);
 
   const hasPartialEligibleSelection = useMemo(() => {
+    if (isAnulado) return false;
     return (
       !isAllEligibleSelected &&
       eligibleForDelivery.some((d) =>
         selectedItemsIds.includes(d.id_requerimiento_almacen_detalle),
       )
     );
-  }, [eligibleForDelivery, selectedItemsIds, isAllEligibleSelected]);
+  }, [eligibleForDelivery, selectedItemsIds, isAllEligibleSelected, isAnulado]);
 
   const toggleSelectAllEligible = useCallback(() => {
+    if (isAnulado) {
+      setSelectedItemsIds([]);
+      return;
+    }
     if (isAllEligibleSelected) {
       setSelectedItemsIds([]);
     } else {
@@ -131,7 +147,7 @@ export const useGestionAtencion = ({
         eligibleForDelivery.map((d) => d.id_requerimiento_almacen_detalle),
       );
     }
-  }, [eligibleForDelivery, isAllEligibleSelected]);
+  }, [eligibleForDelivery, isAllEligibleSelected, isAnulado]);
 
   const loadData = useCallback(
     async (isSilent = false) => {
@@ -189,7 +205,7 @@ export const useGestionAtencion = ({
   }, [openedTrace, selectedItemId]);
 
   const handleAprobar = useCallback(async () => {
-    if (!selectedItemId) return;
+    if (isAnulado || !selectedItemId) return;
     setIsProcessing(selectedItemId);
     setError("");
     try {
@@ -223,10 +239,10 @@ export const useGestionAtencion = ({
     } finally {
       setIsProcessing(null);
     }
-  }, [selectedItemId, comentarioAccion, closeAprobar, onSuccess]);
+  }, [isAnulado, selectedItemId, comentarioAccion, closeAprobar, onSuccess]);
 
   const handleRechazar = useCallback(async () => {
-    if (!selectedItemId) return;
+    if (isAnulado || !selectedItemId) return;
     setIsProcessing(selectedItemId);
     setError("");
     try {
@@ -260,11 +276,11 @@ export const useGestionAtencion = ({
     } finally {
       setIsProcessing(null);
     }
-  }, [selectedItemId, comentarioAccion, closeRechazo, onSuccess]);
+  }, [isAnulado, selectedItemId, comentarioAccion, closeRechazo, onSuccess]);
 
   const handleDecisionMasiva = useCallback(
     async (estado: Estado_RequerimientoDetalle) => {
-      if (idsParaAccionMasiva.length === 0) return;
+      if (isAnulado || idsParaAccionMasiva.length === 0) return;
       setIsProcessing(-1); // -1 para batch
       setError("");
       try {
@@ -300,6 +316,7 @@ export const useGestionAtencion = ({
       }
     },
     [
+      isAnulado,
       idsParaAccionMasiva,
       comentarioAccion,
       closeAprobar,

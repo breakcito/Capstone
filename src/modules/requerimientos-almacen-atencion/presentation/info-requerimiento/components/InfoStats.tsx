@@ -3,12 +3,26 @@ import { ClockIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import { BadgeField } from "../header/badge-field";
 import type { RES_RequerimientoAlmacen } from "../../../../../service/responses/requerimientos-almacen/requerimiento-almacen";
+import { Estado_Requerimiento } from "../../../../../shared/enums/requerimiento-almacen/requerimiento";
 
 interface InfoStatsProps {
   requerimiento: RES_RequerimientoAlmacen;
 }
 
+const estadoColors: Record<string, string> = {
+  [Estado_Requerimiento.Generado]: "blue",
+  [Estado_Requerimiento.EnDespacho]: "green",
+  [Estado_Requerimiento.Anulado]: "red",
+  [Estado_Requerimiento.Cerrado]: "gray",
+  [Estado_Requerimiento.Completado]: "teal",
+};
+
 export const InfoStats = ({ requerimiento }: InfoStatsProps) => {
+  const estadoColor =
+    requerimiento.estado && estadoColors[requerimiento.estado]
+      ? estadoColors[requerimiento.estado]
+      : "gray";
+
   return (
     <Paper
       p="md"
@@ -21,7 +35,11 @@ export const InfoStats = ({ requerimiento }: InfoStatsProps) => {
           value={requerimiento.almacen_destino}
           color="blue"
         />
-        <BadgeField label="Estado" value={requerimiento.estado} color="green" />
+        <BadgeField
+          label="Estado"
+          value={requerimiento.estado}
+          color={estadoColor}
+        />
         <BadgeField
           label="Fecha Solicitada"
           value={

@@ -23,6 +23,7 @@ import { enPlural } from "../../../../../shared/functions/en-plural";
 
 interface InfoItemsTableProps {
   detalles: DetalleRequerimientoExtendido[];
+  isAnulado?: boolean;
   selectedItemsIds: number[];
   toggleItemSelection: (id: number) => void;
   isAllEligibleSelected: boolean;
@@ -45,6 +46,7 @@ interface InfoItemsTableProps {
 
 export const InfoItemsTable = ({
   detalles,
+  isAnulado = false,
   selectedItemsIds,
   toggleItemSelection,
   isAllEligibleSelected,
@@ -88,49 +90,52 @@ export const InfoItemsTable = ({
           >
             Historial de Entregas
           </Button>
-          <Button
-            color="indigo"
-            size="xs"
-            leftSection={<TruckIcon className="size-4" />}
-            disabled={selectedItemsIds.length === 0}
-            onClick={openEntregaBatch}
-          >
-            Nueva Entrega
-          </Button>
-          {detalles.some(
-            (d) =>
-              d.estado ===
-              Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
-          ) && (
-            <>
-              <Button
-                color="green"
-                variant="filled"
-                size="xs"
-                leftSection={<CheckCircleIcon className="size-4" />}
-                disabled={idsParaAccionMasiva.length === 0}
-                onClick={() => {
-                  setSelectedItemId(null);
-                  openAprobar();
-                }}
-              >
-                Aprobar ({idsParaAccionMasiva.length})
-              </Button>
-              <Button
-                color="red"
-                variant="filled"
-                size="xs"
-                leftSection={<XCircleIcon className="size-4" />}
-                disabled={idsParaAccionMasiva.length === 0}
-                onClick={() => {
-                  setSelectedItemId(null);
-                  openRechazo();
-                }}
-              >
-                Rechazar ({idsParaAccionMasiva.length})
-              </Button>
-            </>
+          {!isAnulado && (
+            <Button
+              color="indigo"
+              size="xs"
+              leftSection={<TruckIcon className="size-4" />}
+              disabled={selectedItemsIds.length === 0}
+              onClick={openEntregaBatch}
+            >
+              Nueva Entrega
+            </Button>
           )}
+          {!isAnulado &&
+            detalles.some(
+              (d) =>
+                d.estado ===
+                Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
+            ) && (
+              <>
+                <Button
+                  color="green"
+                  variant="filled"
+                  size="xs"
+                  leftSection={<CheckCircleIcon className="size-4" />}
+                  disabled={idsParaAccionMasiva.length === 0}
+                  onClick={() => {
+                    setSelectedItemId(null);
+                    openAprobar();
+                  }}
+                >
+                  Aprobar ({idsParaAccionMasiva.length})
+                </Button>
+                <Button
+                  color="red"
+                  variant="filled"
+                  size="xs"
+                  leftSection={<XCircleIcon className="size-4" />}
+                  disabled={idsParaAccionMasiva.length === 0}
+                  onClick={() => {
+                    setSelectedItemId(null);
+                    openRechazo();
+                  }}
+                >
+                  Rechazar ({idsParaAccionMasiva.length})
+                </Button>
+              </>
+            )}
           <Badge variant="light" color="indigo" radius="md">
             {detalles.length} {detalles.length === 1 ? "Producto" : "Productos"}
           </Badge>
@@ -143,24 +148,25 @@ export const InfoItemsTable = ({
             <tr>
               <th className="px-6 py-4 text-center flex flex-row gap-3 justify-center items-center">
                 #
-                {detalles.some(
-                  (d) =>
-                    d.estado ===
-                      Estado_RequerimientoDetalle.Aprobado.toString() ||
-                    d.estado ===
-                      Estado_RequerimientoDetalle.EnDespacho.toString(),
-                ) && (
-                  <div className="flex justify-center">
-                    <Checkbox
-                      checked={isAllEligibleSelected}
-                      indeterminate={hasPartialEligibleSelection}
-                      onChange={toggleSelectAllEligible}
-                      color="indigo"
-                      size="xs"
-                      className="cursor-pointer translate-y-px"
-                    />
-                  </div>
-                )}
+                {!isAnulado &&
+                  detalles.some(
+                    (d) =>
+                      d.estado ===
+                        Estado_RequerimientoDetalle.Aprobado.toString() ||
+                      d.estado ===
+                        Estado_RequerimientoDetalle.EnDespacho.toString(),
+                  ) && (
+                    <div className="flex justify-center">
+                      <Checkbox
+                        checked={isAllEligibleSelected}
+                        indeterminate={hasPartialEligibleSelection}
+                        onChange={toggleSelectAllEligible}
+                        color="indigo"
+                        size="xs"
+                        className="cursor-pointer translate-y-px"
+                      />
+                    </div>
+                  )}
               </th>
               <th className="px-6 py-4 text-left">Producto</th>
               <th className="px-6 py-4 text-center min-w-45">
@@ -172,20 +178,21 @@ export const InfoItemsTable = ({
               <th className="px-6 py-4 text-center w-48">
                 <Group gap={4} justify="center">
                   <span>Acciones</span>
-                  {detalles.some(
-                    (d) =>
-                      d.estado ===
-                      Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
-                  ) && (
-                    <Tooltip label="Seleccionar todos los pendientes">
-                      <Checkbox
-                        size="xs"
-                        color="indigo"
-                        checked={isAllPendingSelected}
-                        onChange={seleccionarTodoLoPendiente}
-                      />
-                    </Tooltip>
-                  )}
+                  {!isAnulado &&
+                    detalles.some(
+                      (d) =>
+                        d.estado ===
+                        Estado_RequerimientoDetalle.EsperandoAprobacion.toString(),
+                    ) && (
+                      <Tooltip label="Seleccionar todos los pendientes">
+                        <Checkbox
+                          size="xs"
+                          color="indigo"
+                          checked={isAllPendingSelected}
+                          onChange={seleccionarTodoLoPendiente}
+                        />
+                      </Tooltip>
+                    )}
                 </Group>
               </th>
             </tr>
@@ -199,12 +206,13 @@ export const InfoItemsTable = ({
                 >
                   <td className="px-6 py-4 text-center text-xs font-mono text-zinc-500 flex flex-row items-center justify-center gap-3">
                     {idx + 1}
-                    {item.estado ===
+                    {!isAnulado &&
+                    (item.estado ===
                       Estado_RequerimientoDetalle.Aprobado.toString() ||
-                    item.estado ===
-                      Estado_RequerimientoDetalle.AprobadoLogistica.toString() ||
-                    item.estado ===
-                      Estado_RequerimientoDetalle.EnDespacho.toString() ? (
+                      item.estado ===
+                        Estado_RequerimientoDetalle.AprobadoLogistica.toString() ||
+                      item.estado ===
+                        Estado_RequerimientoDetalle.EnDespacho.toString()) ? (
                       <Checkbox
                         checked={selectedItemsIds.includes(
                           item.id_requerimiento_almacen_detalle,
@@ -221,7 +229,11 @@ export const InfoItemsTable = ({
                     ) : (
                       <div
                         className="flex justify-center"
-                        title="No se puede despachar este producto"
+                        title={
+                          isAnulado
+                            ? "Requerimiento anulado"
+                            : "No se puede despachar este producto"
+                        }
                       >
                         <NoSymbolIcon className="size-5 text-gray-500" />
                       </div>
@@ -428,61 +440,59 @@ export const InfoItemsTable = ({
                         </ActionIcon>
                       </Tooltip>
 
-                      {item.estado ===
-                        Estado_RequerimientoDetalle.EsperandoAprobacion.toString() && (
-                        <>
-                          <Tooltip label="Aprobar" position="top" withArrow>
-                            <ActionIcon
-                              variant="filled"
-                              color="green"
-                              onClick={() => {
-                                setSelectedItemId(
-                                  item.id_requerimiento_almacen_detalle,
-                                );
-                                openAprobar();
-                              }}
-                              disabled={isProcessing !== null}
-                            >
-                              <CheckCircleIcon className="size-5 text-white" />
-                            </ActionIcon>
-                          </Tooltip>
+                      {!isAnulado &&
+                        item.estado ===
+                          Estado_RequerimientoDetalle.EsperandoAprobacion.toString() && (
+                          <>
+                            <Tooltip label="Aprobar" position="top" withArrow>
+                              <ActionIcon
+                                variant="filled"
+                                color="green"
+                                onClick={() => {
+                                  setSelectedItemId(
+                                    item.id_requerimiento_almacen_detalle,
+                                  );
+                                  openAprobar();
+                                }}
+                                disabled={isProcessing !== null}
+                              >
+                                <CheckCircleIcon className="size-5 text-white" />
+                              </ActionIcon>
+                            </Tooltip>
 
-                          <Tooltip label="Rechazar" position="top" withArrow>
-                            <ActionIcon
-                              variant="filled"
-                              color="red"
-                              onClick={() => {
-                                setSelectedItemId(
-                                  item.id_requerimiento_almacen_detalle,
-                                );
-                                openRechazo();
-                              }}
-                              disabled={isProcessing !== null}
-                            >
-                              <XCircleIcon className="size-5 text-white" />
-                            </ActionIcon>
-                          </Tooltip>
-                        </>
-                      )}
+                            <Tooltip label="Rechazar" position="top" withArrow>
+                              <ActionIcon
+                                variant="filled"
+                                color="red"
+                                onClick={() => {
+                                  setSelectedItemId(
+                                    item.id_requerimiento_almacen_detalle,
+                                  );
+                                  openRechazo();
+                                }}
+                                disabled={isProcessing !== null}
+                              >
+                                <XCircleIcon className="size-5 text-white" />
+                              </ActionIcon>
+                            </Tooltip>
 
-                      {item.estado ===
-                        Estado_RequerimientoDetalle.EsperandoAprobacion.toString() && (
-                        <Tooltip label="Acción masiva" position="top" withArrow>
-                          <Checkbox
-                            size="xs"
-                            color="indigo"
-                            checked={idsParaAccionMasiva.includes(
-                              item.id_requerimiento_almacen_detalle,
-                            )}
-                            onChange={() =>
-                              toggleSeleccionMasiva(
-                                item.id_requerimiento_almacen_detalle,
-                              )
-                            }
-                            className="ml-1"
-                          />
-                        </Tooltip>
-                      )}
+                            <Tooltip label="Acción masiva" position="top" withArrow>
+                              <Checkbox
+                                size="xs"
+                                color="indigo"
+                                checked={idsParaAccionMasiva.includes(
+                                  item.id_requerimiento_almacen_detalle,
+                                )}
+                                onChange={() =>
+                                  toggleSeleccionMasiva(
+                                    item.id_requerimiento_almacen_detalle,
+                                  )
+                                }
+                                className="ml-1"
+                              />
+                            </Tooltip>
+                          </>
+                        )}
                     </Group>
                   </td>
                 </tr>
