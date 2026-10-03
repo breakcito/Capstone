@@ -202,7 +202,11 @@ export const AtencionService = {
 
   /**
    * Anula un requerimiento completo.
-   * Solo funciona si NO tiene entregas activas (estado='Entregado').
+   * - Si el requerimiento NO tiene entregas activas: solo cambia el estado
+   *   de la cabecera a "Anulado".
+   * - Si tiene entregas activas: ademas anula cada entrega, reintegrando
+   *   el stock a los lotes originales y registrando el movimiento inverso
+   *   en Kardex (Ingreso / Reingreso).
    */
   anularRequerimiento: async (
     idRequerimiento: number,
@@ -210,18 +214,6 @@ export const AtencionService = {
   ) => {
     const res = await api.post<IRespuesta<null>>(
       `${path}/${idRequerimiento}/anular`,
-      motivo ? { motivo } : {},
-    );
-    return res.data;
-  },
-
-  /**
-   * Anula una entrega especifica: devuelve stock al lote y registra
-   * el movimiento inverso en Kardex (Ingreso / Reingreso).
-   */
-  anularEntrega: async (idEntrega: number, motivo?: string) => {
-    const res = await api.post<IRespuesta<null>>(
-      `${path}/entregas/${idEntrega}/anular`,
       motivo ? { motivo } : {},
     );
     return res.data;

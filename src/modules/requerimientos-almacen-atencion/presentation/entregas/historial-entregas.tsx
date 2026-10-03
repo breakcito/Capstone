@@ -7,8 +7,6 @@ import {
   Group,
   Collapse,
   UnstyledButton,
-  ActionIcon,
-  Tooltip,
 } from "@mantine/core";
 import dayjs from "dayjs";
 import { useHistorialEntregasRequerimiento } from "../../hooks/useHistorialEntregasRequerimiento";
@@ -20,43 +18,24 @@ import {
   CubeIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { formatNumber } from "../../../../shared/functions/formatNumber";
 import { ArchivoCard } from "../../../../presentation/utils/archivo/archivo-card";
 import { PaperClipIcon } from "@heroicons/react/24/outline";
 import { Estado_EntregaRequerimiento } from "../../../../shared/enums/requerimiento-almacen/requerimiento-entrega";
-import { ModalAnularEntrega } from "../components/ModalAnularEntrega";
 
 interface HistorialProps {
   idRequerimiento: number;
-  readOnly?: boolean;
-  /**
-   * Callback que se llama cuando una entrega fue anulada exitosamente.
-   * La pagina padre lo usa para refrescar el requerimiento completo
-   * (porque la entrega afecta la cantidad_entregada_base del detalle).
-   */
-  onEntregaAnulada?: (idEntrega: number) => void;
 }
 
 export const HistorialEntregasRequerimiento = ({
   idRequerimiento,
-  readOnly = false,
-  onEntregaAnulada,
 }: HistorialProps) => {
   const { loading, historial, error } =
     useHistorialEntregasRequerimiento(idRequerimiento);
 
   // Mantiene el estado de qué entregas están expandidas. Por defecto, expandir la primera.
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
-
-  // Modal de anulacion de entrega
-  const [entregaAAnular, setEntregaAAnular] = useState<{
-    id_requerimiento_almacen_entrega: number;
-    correlativo: string;
-    estado: string;
-  } | null>(null);
-  const [openedAnularEntrega, setOpenedAnularEntrega] = useState(false);
 
   const toggleExpand = (id: number) => {
     setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -180,33 +159,6 @@ export const HistorialEntregasRequerimiento = ({
                       >
                         {h.estado}
                       </Badge>
-                      {!readOnly &&
-                        h.estado === Estado_EntregaRequerimiento.Entregado && (
-                        <Tooltip
-                          label="Anular entrega y reintegrar stock al lote"
-                          position="top"
-                          withArrow
-                        >
-                          <ActionIcon
-                            size="xs"
-                            color="red"
-                            variant="light"
-                            radius="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEntregaAAnular({
-                                id_requerimiento_almacen_entrega:
-                                  h.id_requerimiento_almacen_entrega,
-                                correlativo: h.correlativo,
-                                estado: h.estado,
-                              });
-                              setOpenedAnularEntrega(true);
-                            }}
-                          >
-                            <XCircleIcon className="w-4 h-4" />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
                     </Group>
                     <Group gap="xs" className="text-zinc-400" wrap="nowrap">
                       <Group gap="xs" wrap="nowrap">
@@ -423,22 +375,6 @@ export const HistorialEntregasRequerimiento = ({
           </Paper>
         );
       })}
-
-      <ModalAnularEntrega
-        opened={openedAnularEntrega}
-        close={() => {
-          setOpenedAnularEntrega(false);
-          setEntregaAAnular(null);
-        }}
-        entrega={entregaAAnular}
-        onAnulada={(idEntrega) => {
-          setOpenedAnularEntrega(false);
-          setEntregaAAnular(null);
-          if (onEntregaAnulada) {
-            onEntregaAnulada(idEntrega);
-          }
-        }}
-      />
     </Stack>
   );
 };
