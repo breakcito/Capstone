@@ -17,6 +17,7 @@ export const useLotesPage = () => {
 
   const [searchParams] = useSearchParams();
   const initialAlmacenId = searchParams.get("idAlmacen");
+  const initialSearch = searchParams.get("search") || searchParams.get("producto") || "";
 
   // States
   const [lotes, setLotes] = useState<RES_Lote[]>([]);
@@ -28,7 +29,7 @@ export const useLotesPage = () => {
 
   // Filters
   const [idAlmacen, setIdAlmacen] = useState<string | null>(initialAlmacenId);
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState(initialSearch);
   const [filtroCategoria, setFiltroCategoria] = useState<string | null>(null);
   const [filtroProducto, setFiltroProducto] = useState<string | null>(null);
   const [selectedLotes, setSelectedLotes] = useState<RES_Lote[]>([]);
@@ -71,7 +72,6 @@ export const useLotesPage = () => {
       const result = await LotesService.listarResumenLotes(Number(idAlmacen));
       if (result.success) {
         setLotes(result.data);
-        setBusqueda("");
         setFiltroCategoria(null);
         setFiltroProducto(null);
         setSelectedLotes([]);

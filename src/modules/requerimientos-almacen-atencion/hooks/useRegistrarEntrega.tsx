@@ -90,6 +90,12 @@ export const useRegistrarEntregaBatch = ({
   const [evidencias, setEvidencias] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  // Fecha real de la entrega (editable, default = ahora).
+  // Importante para que el TDA refleje el momento del despacho real,
+  // no cuando se ingresa el registro. Soporta data retroactiva.
+  const [fechaEntrega, setFechaEntrega] = useState(
+    dayjs().format("YYYY-MM-DD HH:mm:ss"),
+  );
 
   const selectedDetalles = useMemo<DetalleRequerimientoExtendido[]>(() => {
     return detallesRequerimiento
@@ -603,7 +609,7 @@ export const useRegistrarEntregaBatch = ({
           : idEmpleadoRecibe
             ? Number(idEmpleadoRecibe)
             : null,
-        fecha_entrega: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+        fecha_entrega: fechaEntrega,
         observacion,
         evidencias,
         detalles: detallesParaApi,
@@ -828,5 +834,7 @@ export const useRegistrarEntregaBatch = ({
     handleCantActivoChange,
     handleDestinoChange,
     handleConfirmar,
+    fechaEntrega,
+    setFechaEntrega,
   };
 };
