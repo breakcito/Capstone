@@ -6,7 +6,7 @@ import { useTitlePage } from "../../../hooks/useTitlePage";
 import { useRandomLinks, type ILinkView } from "./useRandomLinks";
 import { motion } from "motion/react";
 import { useBlackcito } from "../../../hooks/useBlackcito";
-import { AdminMetrics } from "./admin-metrics";
+import { DashboardBI } from "./dashboard-bi";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -72,7 +72,7 @@ export const HomePage = () => {
 
       {/* Vista según rol: Administrador (2) vs Almacenero (1) */}
       {usuario?.id_rol === 2 ? (
-        <AdminMetrics />
+        <DashboardBI />
       ) : randomLinks.length > 0 ? (
         <motion.div
           variants={containerVariants}

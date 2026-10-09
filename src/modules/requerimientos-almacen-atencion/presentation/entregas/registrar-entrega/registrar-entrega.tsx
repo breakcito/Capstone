@@ -62,6 +62,8 @@ export const RegistrarEntrega = ({
     handleCantActivoChange,
     handleDestinoChange,
     handleConfirmar,
+    fechaEntrega,
+    setFechaEntrega,
   } = useRegistrarEntregaBatch({
     requerimiento,
     idRequerimiento,
@@ -132,6 +134,8 @@ export const RegistrarEntrega = ({
         setObservacion={setObservacion}
         evidencias={evidencias}
         setEvidencias={setEvidencias}
+        fechaEntrega={fechaEntrega}
+        setFechaEntrega={setFechaEntrega}
       />
 
       <Stack gap="xl">
