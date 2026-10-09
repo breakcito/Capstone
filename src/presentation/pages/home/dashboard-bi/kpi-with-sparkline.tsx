@@ -1,15 +1,28 @@
 import { Card, Group, Stack, Text } from "@mantine/core";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import { Sparkline } from "./sparkline";
+
+dayjs.locale("es");
+
+const fmtMesCorto = (str?: string): string => {
+  if (!str) return "";
+  const d = dayjs(str, "YYYY-MM");
+  if (!d.isValid()) return str;
+  const m = d.format("MMM YYYY");
+  return m.charAt(0).toUpperCase() + m.slice(1);
+};
 
 interface KpiWithSparklineProps {
   title: string;
   /** Valor a mostrar (ej. "12 min", "S/. 124,500"). */
   value: string;
   descripcion?: string;
-  /** Serie temporal para la sparkline (x=mes label, y=valor). */
-  serie: { x: string; y: number }[];
+  /** Serie temporal para la sparkline (x=mes label, Valor=valor). */
+  serie: { x: string; Valor: number }[];
   color?: string;
   icon: React.ComponentType<{ className?: string }>;
+  tooltipTipo?: "flujoNeto" | "pedidos" | "entregas";
 }
 
 /**
@@ -22,6 +35,7 @@ export const KpiWithSparkline = ({
   serie,
   color = "#6366f1",
   icon: Icon,
+  tooltipTipo,
 }: KpiWithSparklineProps) => {
   return (
     <Card
@@ -61,7 +75,14 @@ export const KpiWithSparkline = ({
         </div>
 
         <div className="pt-1">
-          <Sparkline data={serie} color={color} height={48} />
+          <Sparkline data={serie} color={color} height={48} tooltipTipo={tooltipTipo} />
+          {serie.length > 0 && (
+            <div className="flex justify-between items-center mt-1 text-[10px] text-zinc-500 font-medium">
+              <span>{fmtMesCorto(serie[0]?.x)}</span>
+              <span>Comportamiento 6 meses</span>
+              <span>{fmtMesCorto(serie[serie.length - 1]?.x)}</span>
+            </div>
+          )}
         </div>
       </div>
     </Card>

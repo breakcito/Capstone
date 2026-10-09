@@ -35,6 +35,7 @@ import {
   ArrowsRightLeftIcon,
   BuildingStorefrontIcon,
 } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 import ExcelJS from "exceljs";
 import { saveAs } from "./utils/save-blob";
 import { useNotify } from "../../../hooks/useNotify";
@@ -68,8 +69,8 @@ const fmtTiempo = (v: number | null | undefined): string => {
   if (v === null || v === undefined) return "—";
   // Unidad inteligente: minutos, horas o dias segun la magnitud
   if (v < 60) {
-    // Menos de una hora: mostrar en minutos
-    return `${formatNumber(v, 0)} min`;
+    // Menos de una hora: mostrar en minutos (1 decimal)
+    return `${formatNumber(v, 1)} min`;
   } else if (v < 1440) {
     // Menos de un dia: mostrar en horas (1 decimal)
     const horas = v / 60;
@@ -132,6 +133,7 @@ const CustomTooltip = ({
 // Componente principal
 // =============================================================================
 export const DashboardBI = () => {
+  const navigate = useNavigate();
   // Estado del filtro de almacen (null = todos)
   const [idAlmacenFiltro, setIdAlmacenFiltro] = useState<string | null>(null);
 
@@ -208,17 +210,17 @@ export const DashboardBI = () => {
 
   // Series para sparklines
   const sparklinePedidos = useMemo(
-    () => tendencias.map((t) => ({ x: t.mes, y: t.total_req })),
+    () => tendencias.map((t) => ({ x: t.mes, Valor: t.total_req })),
     [tendencias],
   );
   // stock_neto_mes: diferencia del mes (ingresos - salidas del mes)
   // Mas util que el acumulado para entender la operacion reciente
   const sparklineFlujoNeto = useMemo(
-    () => tendencias.map((t) => ({ x: t.mes, y: t.stock_neto_mes })),
+    () => tendencias.map((t) => ({ x: t.mes, Valor: t.stock_neto_mes })),
     [tendencias],
   );
   const sparklineEntregas = useMemo(
-    () => tendencias.map((t) => ({ x: t.mes, y: t.entregas_mes })),
+    () => tendencias.map((t) => ({ x: t.mes, Valor: t.entregas_mes })),
     [tendencias],
   );
 
@@ -523,8 +525,8 @@ export const DashboardBI = () => {
        ============================================================ */}
       <section>
         <SectionHeader
-          titulo="Operacion del Dia a Dia"
-          subtitulo="Resumen de la actividad reciente de la operacion"
+          titulo="Operacion Diaria del Almacen"
+          subtitulo="Resumen general de la actividad reciente"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiWithDelta
@@ -567,13 +569,13 @@ export const DashboardBI = () => {
       </section>
 
       {/* ============================================================
-       SECCION 2: CUMPLIMIENTO DE METAS
+       SECCION 2: CALIDAD Y TIEMPOS DE ATENCION
        2 gauges custom (TDA + Exactitud)
        ============================================================ */}
       <section>
         <SectionHeader
-          titulo="Cumplimiento de Objetivos"
-          subtitulo="Como estamos respecto a los objetivos del negocio"
+          titulo="Calidad y Tiempos de Atencion"
+          subtitulo="Metricas de rendimiento operativo y exactitud en despachos"
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Card
@@ -589,10 +591,10 @@ export const DashboardBI = () => {
                   c="zinc.5"
                   className="uppercase tracking-widest"
                 >
-                  Tiempo de Despacho
+                  Tiempo Promedio de Despacho
                 </Text>
                 <Text size="10px" c="zinc.6" fs="italic">
-                  Objetivo: 12 minutos por pedido
+                  Meta esperada: 12 minutos por pedido
                 </Text>
               </Stack>
               <GaugeProgress
@@ -619,10 +621,10 @@ export const DashboardBI = () => {
                   c="zinc.5"
                   className="uppercase tracking-widest"
                 >
-                  Exactitud del Registro
+                  Exactitud del Registro de Inventario
                 </Text>
                 <Text size="10px" c="zinc.6" fs="italic">
-                  Objetivo: 98% de coincidencia
+                  Meta esperada: 98% de coincidencia
                 </Text>
               </Stack>
               <GaugeProgress
@@ -639,13 +641,13 @@ export const DashboardBI = () => {
       </section>
 
       {/* ============================================================
-       SECCION 3: TENDENCIAS
-       3 KPI cards con mini sparklines (Recharts directo)
+       SECCION 3: TENDENCIAS DE LOS ULTIMOS 6 MESES
+       3 KPI cards con mini sparklines
        ============================================================ */}
       <section>
         <SectionHeader
           titulo="Tendencias de los Ultimos 6 Meses"
-          subtitulo="Evolucion mes a mes de los principales indicadores"
+          subtitulo="Evolucion mensual de volumenes y variacion de inventario"
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KpiWithSparkline
@@ -653,30 +655,33 @@ export const DashboardBI = () => {
             value={fmtNum(
               tendencias[tendencias.length - 1]?.total_req ?? 0,
             )}
-            descripcion="Creados mensualmente en los ultimos 6 meses"
+            descripcion="Pedidos creados por mes"
             serie={sparklinePedidos}
             color="#6366f1"
             icon={ShoppingCartIcon}
+            tooltipTipo="pedidos"
           />
           <KpiWithSparkline
             title="Tendencia de Entregas"
             value={fmtNum(
               tendencias[tendencias.length - 1]?.entregas_mes ?? 0,
             )}
-            descripcion="Pedidos completados mensualmente en los ultimos 6 meses"
+            descripcion="Pedidos completados por mes"
             serie={sparklineEntregas}
             color="#10b981"
             icon={ClipboardDocumentCheckIcon}
+            tooltipTipo="entregas"
           />
           <KpiWithSparkline
-            title="Tendencia del Stock"
+            title="Flujo Neto de Inventario"
             value={fmtNum(
               tendencias[tendencias.length - 1]?.stock_neto_mes ?? 0,
             )}
-            descripcion="Diferencia del mes: ingresos menos salidas"
+            descripcion="Diferencia mensual: Entradas menos Salidas"
             serie={sparklineFlujoNeto}
             color="#06b6d4"
             icon={ArrowsRightLeftIcon}
+            tooltipTipo="flujoNeto"
           />
         </div>
       </section>
@@ -732,10 +737,12 @@ export const DashboardBI = () => {
                   {topAlertas.map((a, i) => (
                     <div
                       key={`${a.id_producto}-${a.id_almacen}`}
-                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-zinc-950/40 border border-zinc-800/60 hover:bg-zinc-900/40 transition-colors"
+                      onClick={() => navigate(`/inventario?idAlmacen=${a.id_almacen}&search=${encodeURIComponent(a.producto)}`)}
+                      title="Haz clic para consultar este lote en el almacén"
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-zinc-950/40 border border-zinc-800/60 hover:bg-zinc-800/50 hover:border-zinc-700 transition-all cursor-pointer group"
                     >
                       <Group gap="sm" wrap="nowrap" className="flex-1 min-w-0">
-                        <div className="w-7 h-7 shrink-0 rounded-full bg-zinc-900/60 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+                        <div className="w-7 h-7 shrink-0 rounded-full bg-zinc-900/60 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400 group-hover:border-indigo-500 group-hover:text-indigo-400">
                           {i + 1}
                         </div>
                         <Stack gap={0} className="min-w-0">
@@ -743,7 +750,7 @@ export const DashboardBI = () => {
                             <Text
                               size="sm"
                               fw={700}
-                              className="text-zinc-100 truncate"
+                              className="text-zinc-100 truncate group-hover:text-indigo-300"
                             >
                               {a.producto}
                             </Text>

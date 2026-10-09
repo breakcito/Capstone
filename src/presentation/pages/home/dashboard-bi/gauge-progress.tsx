@@ -44,7 +44,9 @@ const fmtNum = (v: unknown, decimals = 1): string => {
  * ("min min"). Si unidadInteligente=true, NO se deberia pasar `unit` prop.
  */
 const fmtMinInteligente = (v: number): string => {
-  if (v < 60) return `${Math.round(v)} min`;
+  if (v < 60) {
+    return Number.isInteger(v) ? `${v} min` : `${v.toFixed(1)} min`;
+  }
   if (v < 1440) return `${(v / 60).toFixed(1)} h`;
   return `${(v / 1440).toFixed(1)} dias`;
 };
@@ -86,43 +88,43 @@ export const GaugeProgress = ({
   if (mayorEsMejor) {
     if (safeValue >= safeTarget) {
       color = colorCumple;
-      estado = "CUMPLE";
+      estado = "EN META";
       const sob = ((safeValue - safeTarget) / safeTarget) * 100;
       desviacionTexto =
-        sob > 1 ? `+${Math.round(sob)}% sobre el objetivo` : "Cumple el objetivo";
+        sob > 1 ? `+${Math.round(sob)}% sobre la meta` : "Dentro del rango esperado";
     } else if (safeValue >= safeTarget * 0.9) {
       color = colorEnRango;
-      estado = "CERCA DEL OBJETIVO";
+      estado = "ACEPTABLE";
       const deficit = ((safeTarget - safeValue) / safeTarget) * 100;
-      desviacionTexto = `${Math.round(deficit)}% bajo el objetivo`;
+      desviacionTexto = `${Math.round(deficit)}% bajo la meta`;
     } else {
       color = colorFuera;
-      estado = "POR DEBAJO DEL OBJETIVO";
+      estado = "REQUIERE ATENCIÓN";
       const deficit = ((safeTarget - safeValue) / safeTarget) * 100;
-      desviacionTexto = `-${Math.round(deficit)}% bajo el objetivo`;
+      desviacionTexto = `-${Math.round(deficit)}% bajo la meta`;
     }
   } else {
     if (safeValue <= safeTarget) {
       color = colorCumple;
-      estado = "CUMPLE";
+      estado = "EN META";
       if (safeValue === safeTarget) {
-        desviacionTexto = "Exactamente en el objetivo";
+        desviacionTexto = "En el tiempo límite";
       } else if (safeValue < safeTarget) {
         const mejora = ((safeTarget - safeValue) / safeTarget) * 100;
-        desviacionTexto = `${Math.round(mejora)}% mejor`;
+        desviacionTexto = `${Math.round(mejora)}% más rápido`;
       } else {
-        desviacionTexto = "Cumple el objetivo";
+        desviacionTexto = "Dentro del rango esperado";
       }
     } else if (safeValue <= safeTarget * 1.5) {
       color = colorEnRango;
-      estado = "POR ENCIMA DEL OBJETIVO";
+      estado = "ACEPTABLE";
       const exceso = ((safeValue - safeTarget) / safeTarget) * 100;
-      desviacionTexto = `+${Math.round(exceso)}% sobre el objetivo`;
+      desviacionTexto = `+${Math.round(exceso)}% sobre el tiempo límite`;
     } else {
       color = colorFuera;
-      estado = "MUY POR ENCIMA DEL OBJETIVO";
+      estado = "REQUIERE ATENCIÓN";
       const exceso = ((safeValue - safeTarget) / safeTarget) * 100;
-      desviacionTexto = `+${Math.round(exceso)}% sobre el objetivo`;
+      desviacionTexto = `+${Math.round(exceso)}% sobre el tiempo límite`;
     }
   }
 
