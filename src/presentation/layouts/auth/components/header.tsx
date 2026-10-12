@@ -1,6 +1,8 @@
-import { Bars3Icon } from "@heroicons/react/24/outline";
+import { Bars3Icon, SparklesIcon } from "@heroicons/react/24/solid";
 import { UserMenu } from "./user-menu";
 import { useTitlePage } from "../../../../hooks/useTitlePage";
+import { useAuthStore } from "../../../../stores/auth.store";
+import { useIAStore } from "../../../../modules/ia/store/ia.store";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -8,6 +10,8 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { title } = useTitlePage();
+  const usuario = useAuthStore((state) => state.usuario);
+  const abrirIA = useIAStore((state) => state.abrir);
 
   return (
     <header
@@ -57,7 +61,20 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
       </div>
 
       {/* Menu de usuario */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex items-center gap-2">
+        {/* Asistente IA: solo para administradores (id_rol 2).
+            El backend vuelve a validar el rol; esto solo oculta el boton. */}
+        {usuario?.id_rol === 2 && (
+          <button
+            onClick={abrirIA}
+            aria-label="Abrir asistente IA"
+            className="p-2 text-violet-300 hover:text-white transition-all duration-300
+            hover:bg-white/10 rounded-xl hover:shadow-[0_0_15px_rgba(167,139,250,0.25)] active:scale-95"
+          >
+            <SparklesIcon className="w-5 h-5" />
+          </button>
+        )}
+
         <UserMenu />
       </div>
     </header>
