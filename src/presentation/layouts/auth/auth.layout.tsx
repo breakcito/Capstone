@@ -7,6 +7,7 @@ import { GlobalBlackcito } from "./components/global-blackcito";
 import { useAuthLayout } from "./hooks/useAuthLayout";
 import { GlobalPrinterPortal } from "../../utils/printer/GlobalPrinterPortal";
 import { GlobalExcelPortal } from "../../utils/excel/GlobalExcelPortal";
+import { AIChat } from "../../../modules/ia/presentation/AIChat";
 
 export const AuthLayout = () => {
   const { open, setOpen } = useAuthLayout();
@@ -50,6 +51,7 @@ export const AuthLayout = () => {
         {open && <Navbar onClose={() => setOpen(false)} />}
         <GlobalNotification />
         <GlobalBlackcito />
+        <AIChat />
 
         <main className="flex-1 mx-auto w-full pt-22 px-4 pb-10 overflow-hidden relative">
           <motion.div

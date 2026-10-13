@@ -59,16 +59,17 @@ export const HomePage = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-10 py-6 px-4">
       {/* Seccion de bienvenida */}
-      <div className="text-center space-y-4 pt-10">
-        <h1 className="text-2xl md:text-3xl font-extrabold bg-linear-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent tracking-tight">
-          Hola, {usuario?.nombre || "Usuario"}
-        </h1>
-        <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto">
-          {usuario?.id_rol === 2
-            ? "Panel general del sistema. Métricas y monitoreo consolidado de operaciones y almacenes."
-            : "¿Qué deseas hacer hoy? Aquí tienes tus accesos directos a los módulos asignados."}
-        </p>
-      </div>
+      {usuario?.id_rol != 2 && (
+        <div className="text-center space-y-4 pt-10">
+          <h1 className="text-2xl md:text-3xl font-extrabold bg-linear-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent tracking-tight">
+            Hola, {usuario?.nombre || "Usuario"}
+          </h1>
+          <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto">
+            ¿Qué deseas hacer hoy? Aquí tienes tus accesos directos a los
+            módulos asignados.
+          </p>
+        </div>
+      )}
 
       {/* Vista según rol: Administrador (2) vs Almacenero (1) */}
       {usuario?.id_rol === 2 ? (
