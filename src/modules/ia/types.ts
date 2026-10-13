@@ -18,11 +18,11 @@ export interface HerramientaMensaje {
   preview: string;
 }
 
-/** Reporte .xlsx generado por el backend y listo para descargar. */
+/** Reporte PDF generado por el backend y listo para descargar. */
 export interface ArchivoMensaje {
   uuid: string;
   nombre: string;
-  filas: number;
+  bytes: number;
 }
 
 export interface MensajeIA {

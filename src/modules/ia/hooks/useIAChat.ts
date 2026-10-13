@@ -197,8 +197,8 @@ const aplicarEvento = (bloque: string, idRespuesta: string) => {
       store.actualizarMensaje(idRespuesta, {
         archivo: {
           uuid: String(payload.uuid ?? ""),
-          nombre: String(payload.nombre ?? "reporte.xlsx"),
-          filas: Number(payload.filas ?? 0),
+          nombre: String(payload.nombre ?? "reporte.pdf"),
+          bytes: Number(payload.bytes ?? 0),
         },
       });
       break;

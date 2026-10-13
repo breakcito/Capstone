@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   SparklesIcon,
   ArrowDownTrayIcon,
-  ExclamationTriangleIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
 import { api } from "../../../service/_api";
@@ -12,9 +11,17 @@ import type { MensajeIA } from "../types";
 
 interface Props {
   mensaje: MensajeIA;
-  /** El spinner de la herramienta solo gira mientras la respuesta sigue viva. */
+  /** El spinner del cursor solo gira mientras la respuesta sigue viva. */
   transmitiendo: boolean;
 }
+
+/** Formato legible para tamano de archivo (B, KB, MB). */
+const formatearBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 export const AIChatMessage = ({ mensaje, transmitiendo }: Props) => {
   const esUsuario = mensaje.rol === "user";
@@ -94,7 +101,7 @@ export const AIChatMessage = ({ mensaje, transmitiendo }: Props) => {
         )}
 
         <div
-          className={`px-4 py-3 rounded-2xl ${
+          className={`px-4 py-3 rounded-3xl ${
             esUsuario
               ? "bg-violet-600/20 ring-1 ring-violet-500/25 text-zinc-100 text-sm leading-relaxed"
               : mensaje.error
@@ -114,24 +121,7 @@ export const AIChatMessage = ({ mensaje, transmitiendo }: Props) => {
           )}
         </div>
 
-        {/* Herramienta que ejecuto el modelo */}
-        {mensaje.herramienta && (
-          <div className="mt-2 flex items-start gap-2 text-[11px] font-mono text-zinc-500">
-            {mensaje.herramienta.estado === "error" ? (
-              <ExclamationTriangleIcon className="w-3.5 h-3.5 text-red-400 shrink-0 mt-px" />
-            ) : transmitiendo ? (
-              <span className="w-3.5 h-3.5 shrink-0 mt-px rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
-            ) : (
-              <CheckIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-px" />
-            )}
-            <span className={mensaje.herramienta.estado === "error" ? "text-red-400" : "text-emerald-400"}>
-              {mensaje.herramienta.nombre}
-            </span>
-            <span className="truncate text-zinc-600">{mensaje.herramienta.preview}</span>
-          </div>
-        )}
-
-        {/* Descarga del Excel generado */}
+        {/* Descarga del PDF generado. */}
         {mensaje.archivo && (
           <button
             onClick={descargar}
@@ -143,22 +133,9 @@ export const AIChatMessage = ({ mensaje, transmitiendo }: Props) => {
             <ArrowDownTrayIcon className="w-4 h-4" />
             {descargando
               ? "Preparando..."
-              : `${mensaje.archivo.nombre} · ${mensaje.archivo.filas} filas`}
+              : `${mensaje.archivo.nombre}${formatearBytes(mensaje.archivo.bytes) ? ` · ${formatearBytes(mensaje.archivo.bytes)}` : ""}`}
+            {!descargando && <CheckIcon className="w-3.5 h-3.5 opacity-60" />}
           </button>
-        )}
-
-        {/* Razonamiento plegado */}
-        {mensaje.razonamiento && (
-          <details className="mt-2 group">
-            <summary className="cursor-pointer text-[11px] text-zinc-500 hover:text-zinc-400
-              transition-colors select-none">
-              ver razonamiento
-            </summary>
-            <div className="mt-2 p-3 rounded-xl bg-black/30 ring-1 ring-white/5 text-[11px]
-              text-zinc-500 leading-relaxed whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
-              {mensaje.razonamiento}
-            </div>
-          </details>
         )}
       </div>
     </div>
