@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import { useAuthStore } from "../../../stores/auth.store";
 import { useUIStore } from "../../../stores/ui.store";
 import { useIAStore, nuevoId } from "../store/ia.store";
-import type { Adjunto, MensajeAPI } from "../types";
+import type { Adjunto, MensajeAPI, ToolCall } from "../types";
 
 /**
  * Envia la conversacion y consume el stream SSE del backend.
@@ -10,6 +10,12 @@ import type { Adjunto, MensajeAPI } from "../types";
  * NO se usa axios: para leer el ReadableStream de la respuesta hace falta
  * fetch nativo. El token se inyecta a mano porque este endpoint no pasa por
  * los interceptores de `src/service/_api.ts`.
+ *
+ * IMPORTANTE: el historial viaja completo en cada request (stateless), por
+ * lo que preservamos los `tool_calls` del assistant y los mensajes `tool`
+ * con su `tool_call_id`. Si se aplanara a `{role, content}` y se tiraran,
+ * el modelo perderia el contexto de los reportes previos en una conversacion
+ * larga y responderia cosas como "ya te lo envie antes".
  */
 export const useIAChat = () => {
   const abortRef = useRef<AbortController | null>(null);
@@ -43,14 +49,10 @@ export const useIAChat = () => {
     store.limpiarAdjuntos();
     store.setCargando(true);
 
-    // El backend es stateless: se reenvia la conversacion completa.
-    const historial: MensajeAPI[] = [
-      ...useIAStore
-        .getState()
-        .mensajes.filter((m) => m.id !== idRespuesta)
-        .filter((m) => m.texto.trim() !== "")
-        .map((m) => ({ role: m.rol, content: m.texto })),
-    ];
+    // El backend es stateless: se reenvia la conversacion completa con la
+    // cadena de tool_calls y los mensajes `tool` que el modelo necesite ver
+    // para tener continuidad entre turnos.
+    const historial: MensajeAPI[] = serializarHistorial(idRespuesta);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -133,10 +135,86 @@ export const useIAChat = () => {
     } finally {
       abortRef.current = null;
       useIAStore.getState().setCargando(false);
+      defensivaPostFin(idRespuesta);
     }
   }, []);
 
   return { enviar, detener };
+};
+
+/**
+ * Serializa el historial de la conversacion al formato que espera el
+ * backend (OpenAI-compat).
+ *
+ * Reglas:
+ *  - Mensajes `tool` siempre van, aunque tengan content vacio: el backend
+ *    los necesita para encadenar el siguiente turno.
+ *  - Mensajes `assistant` con `tool_calls` se envian aunque su texto este
+ *    vacio: las llamadas a herramientas son el contenido.
+ *  - Mensajes `user` o `assistant` sin tool_calls y con texto vacio se
+ *    descartan (compactacion visual pero no rompen el formato).
+ */
+const serializarHistorial = (idRespuesta: string): MensajeAPI[] => {
+  return useIAStore
+    .getState()
+    .mensajes
+    .filter((m) => m.id !== idRespuesta)
+    .filter((m) => {
+      if (m.rol === "tool") return true;
+      if (m.rol === "assistant" && (m.tool_calls?.length ?? 0) > 0) return true;
+      return m.texto.trim() !== "";
+    })
+    .map((m): MensajeAPI => {
+      if (m.rol === "tool") {
+        return {
+          role: "tool",
+          content: m.texto,
+          tool_call_id: m.tool_call_id ?? "",
+          name: m.herramienta?.nombre ?? "",
+        };
+      }
+      if (m.rol === "assistant" && (m.tool_calls?.length ?? 0) > 0) {
+        return {
+          role: "assistant",
+          content: m.texto,
+          tool_calls: m.tool_calls,
+        };
+      }
+      return { role: m.rol, content: m.texto };
+    });
+};
+
+/**
+ * Despues de que el stream termina (con o sin error), si el modelo pidio
+ * generar un PDF pero por algun motivo no llego el evento `archivo`,
+ * marcamos el mensaje como incompleto para que la UI muestre la accion
+ * correcta en lugar de un "Listo..." enganado.
+ */
+const defensivaPostFin = (idRespuesta: string): void => {
+  const store = useIAStore.getState();
+  const mensaje = store.mensajes.find((m) => m.id === idRespuesta);
+
+  if (!mensaje || mensaje.error || mensaje.archivo) return;
+
+  const pidioReporte = (mensaje.tool_calls ?? []).some(
+    (c) => c.nombre === "generar_reporte_pdf",
+  );
+
+  if (!pidioReporte) return;
+
+  store.actualizarMensaje(idRespuesta, {
+    texto:
+      (mensaje.texto ?? "").trim().length > 0
+        ? mensaje.texto +
+          "\n\nNo pude generar el archivo del reporte. Pidelo de nuevo y lo armo."
+        : "No pude generar el archivo del reporte. Pidelo de nuevo y lo armo.",
+    error: true,
+  });
+
+  useUIStore.getState().notify({
+    type: "error",
+    content: "El asistente no entrego el archivo. Vuelve a pedirlo.",
+  });
 };
 
 /**
@@ -182,7 +260,47 @@ const aplicarEvento = (bloque: string, idRespuesta: string) => {
       break;
     }
 
+    case "tool_call": {
+      // El modelo decidio llamar a una herramienta. Lo guardamos en el
+      // mensaje del assistant para reenviarlo en el siguiente turno.
+      const nuevo: ToolCall = {
+        id: String(payload.id ?? ""),
+        nombre: String(payload.nombre ?? ""),
+        argumentos: String(payload.argumentos ?? ""),
+      };
+      const existentes = mensaje?.tool_calls ?? [];
+      // Deduplicar por id (el backend podria reenviar el mismo evento).
+      if (existentes.some((t) => t.id === nuevo.id && nuevo.id !== "")) break;
+      store.actualizarMensaje(idRespuesta, {
+        tool_calls: [...existentes, nuevo],
+      });
+      break;
+    }
+
+    case "tool_result": {
+      // El backend ya ejecuto la herramienta: persistimos un mensaje
+      // `tool` con su tool_call_id para que el siguiente turno del modelo
+      // vea el resultado en la posicion correcta del historial.
+      const toolCallId = String(payload.tool_call_id ?? "");
+      const contenido = String(payload.content ?? "");
+      const nombre = String(payload.nombre ?? "");
+      const estado = payload.estado === "error" ? "error" : "ok";
+
+      if (toolCallId === "") break;
+
+      store.agregarMensaje({
+        id: nuevoId(),
+        rol: "tool",
+        texto: contenido,
+        tool_call_id: toolCallId,
+        herramienta: { nombre, estado, preview: "" },
+      });
+      break;
+    }
+
     case "tool": {
+      // Evento de estado (ok/error) compatible con la version anterior.
+      // La UI no muestra nada de esto: queda reservado para logs.
       store.actualizarMensaje(idRespuesta, {
         herramienta: {
           nombre: String(payload.nombre ?? ""),
