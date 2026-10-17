@@ -25,20 +25,50 @@ export interface ArchivoMensaje {
   bytes: number;
 }
 
+/**
+ * Llamada a herramienta que el modelo pidio en su turno.
+ *
+ * Se persiste en el mensaje del assistant para reenviarla al backend tal
+ * cual (compatible con el formato OpenAI function-calling). Sin esto, el
+ * modelo pierde la nocion de que ya uso una herramienta en turnos previos
+ * y empieza a contestar "ya te lo envie antes".
+ */
+export interface ToolCall {
+  id: string;
+  nombre: string;
+  argumentos: string;
+}
+
 export interface MensajeIA {
   id: string;
-  rol: "user" | "assistant";
+  rol: "user" | "assistant" | "tool";
   texto: string;
   /** Razonamiento del modelo, plegado en un <details>. */
   razonamiento?: string;
   adjuntos?: Adjunto[];
   herramienta?: HerramientaMensaje;
   archivo?: ArchivoMensaje;
+  /** tool_calls del assistant. Solo presente en turnos donde decidio llamar herramientas. */
+  tool_calls?: ToolCall[];
+  /** tool_call_id del mensaje tool. Solo presente en mensajes de rol === "tool". */
+  tool_call_id?: string;
   error?: boolean;
 }
 
-/** Mensaje tal y como viaja al backend. No lleva adjuntos: van aparte. */
+/**
+ * Mensaje tal y como viaja al backend en formato OpenAI-compat.
+ *
+ * El backend es stateless: reenviamos la conversacion completa en cada
+ * request, asi que tenemos que preservar la cadena de tool_calls y los
+ * mensajes tool para que el modelo tenga continuidad entre turnos.
+ */
 export interface MensajeAPI {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
+  /** Solo en assistant cuando el modelo decidio llamar herramientas. */
+  tool_calls?: ToolCall[];
+  /** Solo en tool. */
+  tool_call_id?: string;
+  /** Solo en tool. */
+  name?: string;
 }

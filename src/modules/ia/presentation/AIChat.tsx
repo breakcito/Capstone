@@ -31,6 +31,12 @@ export const AIChat = () => {
   const [ancho, setAncho] = useState(ANCHO_INICIAL);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Los mensajes de rol `tool` son metadata interna de la conversacion:
+  // guardan resultados de herramientas para el siguiente turno del modelo.
+  // No tienen sentido como burbujas en pantalla, asi que se filtran del render
+  // pero siguen vivos en el store para serializarse al backend.
+  const visibles = mensajes.filter((m) => m.rol !== "tool");
+
   /** Arrastre del borde izquierdo para redimensionar. */
   const iniciarRedimension = useCallback(
     (e: React.PointerEvent) => {
@@ -141,7 +147,7 @@ export const AIChat = () => {
 
           {/* Mensajes */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {mensajes.length === 0 ? (
+            {visibles.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-6 gap-3">
                 <SparklesIcon className="w-8 h-8 text-violet-400/60" />
                 <p className="text-sm text-zinc-400">
@@ -165,13 +171,13 @@ export const AIChat = () => {
                 </div>
               </div>
             ) : (
-              mensajes.map((mensaje, indice) => (
+              visibles.map((mensaje, indice) => (
                 <AIChatMessage
                   key={mensaje.id}
                   mensaje={mensaje}
                   // Solo el ultimo mensaje en curso gira: al llegar el evento
                   // "fin" la respuesta ya esta cerrada y el spinner se congela.
-                  transmitiendo={cargando && indice === mensajes.length - 1}
+                  transmitiendo={cargando && indice === visibles.length - 1}
                 />
               ))
             )}
